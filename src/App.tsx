@@ -14,21 +14,30 @@ function AppRoutes() {
   return (
     <Routes>
       <Route
+        path="/"
+        element={
+          isAuthenticated ? (
+            <Navigate to="/reservas" replace />
+          ) : (
+            <Login />
+          )
+        }
+      />
+      <Route
         path="/login"
         element={isAuthenticated ? <Navigate to="/reservas" replace /> : <Login />}
       />
       <Route
-        path="/"
+        path="/reservas"
         element={
           <ProtectedRoute>
             <Layout />
           </ProtectedRoute>
         }
       >
-        <Route index element={<Navigate to="/reservas" replace />} />
-        <Route path="reservas" element={<ReservasList />} />
-        <Route path="reservas/nova" element={<ReservaForm />} />
-        <Route path="reservas/:id/editar" element={<ReservaForm />} />
+        <Route index element={<ReservasList />} />
+        <Route path="nova" element={<ReservaForm />} />
+        <Route path=":id/editar" element={<ReservaForm />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

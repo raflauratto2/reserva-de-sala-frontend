@@ -3,9 +3,8 @@ import { useAuth } from '@/controllers/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Form, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { Form, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -30,7 +29,11 @@ export const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+      <div className="text-center mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema</h1>
+        <h2 className="text-xl text-gray-600">Reserva de Salas de Reunião</h2>
+      </div>
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Login</CardTitle>
