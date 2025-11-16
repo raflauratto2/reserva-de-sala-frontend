@@ -2,19 +2,9 @@
 
 Este é o front-end web para um sistema de reservas de salas de reunião. Foi desenvolvido usando React com TypeScript, seguindo o padrão MVC e utilizando GraphQL para comunicação com a API.
 
-## Video do sistema configurado
-
 Assista ao vídeo demonstrativo do sistema:
 
-<div align="center">
-  
-  <iframe src="https://player.vimeo.com/video/1137491148?h=1137491148&badge=0&autopause=0&player_id=0&app_id=58479" width="640" height="360" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen title="Demonstração do Sistema de Reserva de Salas"></iframe>
-  
-  <br>
-  
-  **[Assistir no Vimeo](https://vimeo.com/1137491148)** | **[Download do vídeo](https://vimeo.com/1137491148)**
-  
-</div>
+**[Assistir vídeo no Vimeo](https://vimeo.com/1137491148)**
 
 ## Tecnologias Utilizadas
 
