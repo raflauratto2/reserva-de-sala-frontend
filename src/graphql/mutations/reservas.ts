@@ -6,6 +6,7 @@ export const CREATE_RESERVA = gql`
       id
       local
       sala
+      salaId
       dataHoraInicio
       dataHoraFim
       responsavelId
@@ -23,6 +24,7 @@ export const UPDATE_RESERVA = gql`
       id
       local
       sala
+      salaId
       dataHoraInicio
       dataHoraFim
       responsavelId

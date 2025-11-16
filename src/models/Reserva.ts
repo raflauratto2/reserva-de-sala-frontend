@@ -1,7 +1,8 @@
 export interface Reserva {
   id: number;
-  local: string;
-  sala: string;
+  local?: string | null;
+  sala?: string | null;
+  salaId?: number | null;
   dataHoraInicio: string;
   dataHoraFim: string;
   responsavelId: number;
@@ -12,8 +13,9 @@ export interface Reserva {
 }
 
 export interface ReservaInput {
-  local: string;
-  sala: string;
+  salaId?: number;
+  local?: string;
+  sala?: string;
   dataHoraInicio: string;
   dataHoraFim: string;
   cafeQuantidade?: number;
@@ -21,6 +23,7 @@ export interface ReservaInput {
 }
 
 export interface ReservaUpdateInput {
+  salaId?: number;
   local?: string;
   sala?: string;
   dataHoraInicio?: string;
@@ -30,10 +33,11 @@ export interface ReservaUpdateInput {
 }
 
 export interface ReservaFormData {
-  local: string;
-  sala: string;
-  dataHoraInicio: string;
-  dataHoraFim: string;
+  salaId?: number;
+  local?: string;
+  sala?: string;
+  data: string;
+  hora: string;
   cafeQuantidade?: number;
   cafeDescricao?: string;
 }

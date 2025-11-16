@@ -6,6 +6,7 @@ export const GET_RESERVAS = gql`
       id
       local
       sala
+      salaId
       dataHoraInicio
       dataHoraFim
       responsavelId
@@ -23,6 +24,7 @@ export const GET_RESERVA = gql`
       id
       local
       sala
+      salaId
       dataHoraInicio
       dataHoraFim
       responsavelId
@@ -34,3 +36,36 @@ export const GET_RESERVA = gql`
   }
 `;
 
+export const GET_HORARIOS_DISPONIVEIS_POR_HORA = gql`
+  query GetHorariosDisponiveisPorHora(
+    $salaId: Int!
+    $data: String!
+    $horaInicio: String
+    $horaFim: String
+  ) {
+    horariosDisponiveisPorHora(
+      salaId: $salaId
+      data: $data
+      horaInicio: $horaInicio
+      horaFim: $horaFim
+    )
+  }
+`;
+
+export const GET_RESERVAS_POR_SALA = gql`
+  query GetReservasPorSala($salaId: Int!, $data: String!) {
+    reservasPorSala(salaId: $salaId, data: $data) {
+      id
+      local
+      sala
+      salaId
+      dataHoraInicio
+      dataHoraFim
+      responsavelId
+      cafeQuantidade
+      cafeDescricao
+      createdAt
+      updatedAt
+    }
+  }
+`;

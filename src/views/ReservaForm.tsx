@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useCreateReserva, useUpdateReserva, useReserva } from '@/controllers/useReservas';
+import { useCreateReserva, useUpdateReserva, useReserva, useHorariosDisponiveisPorHora } from '@/controllers/useReservas';
+import { useSalas } from '@/controllers/useSalas';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { ReservaFormData } from '@/models/Reserva';
+import { Sala } from '@/models/Sala';
 
 export const ReservaForm = () => {
   const navigate = useNavigate();
@@ -16,90 +17,88 @@ export const ReservaForm = () => {
   const { reserva, loading: loadingReserva } = useReserva(id || '');
   const { handleCreate, loading: creating } = useCreateReserva();
   const { handleUpdate, loading: updating } = useUpdateReserva();
+  const { salas, loading: loadingSalas } = useSalas(0, 100, true); // Apenas salas ativas
 
-  const [formData, setFormData] = useState<ReservaFormData>({
-    local: '',
-    sala: '',
-    dataInicio: '',
-    dataFim: '',
-    responsavel: '',
-    cafeQuantidade: undefined,
-    cafeDescricao: '',
-  });
-
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [salaSelecionada, setSalaSelecionada] = useState<number | null>(null);
+  const [data, setData] = useState('');
+  const [horaSelecionada, setHoraSelecionada] = useState<string | null>(null);
+  const [cafeQuantidade, setCafeQuantidade] = useState<number | ''>('');
+  const [cafeDescricao, setCafeDescricao] = useState('');
   const [submitError, setSubmitError] = useState('');
 
+  // Busca horários disponíveis quando sala e data são selecionados
+  const { horarios, loading: loadingHorarios, refetch: refetchHorarios } = useHorariosDisponiveisPorHora(
+    salaSelecionada,
+    data,
+    '08:00:00',
+    '18:00:00'
+  );
+
+  // Carrega dados da reserva ao editar
   useEffect(() => {
     if (isEdit && reserva) {
-      const dataInicio = new Date(reserva.dataInicio).toISOString().slice(0, 16);
-      const dataFim = new Date(reserva.dataFim).toISOString().slice(0, 16);
-      
-      setFormData({
-        local: reserva.local,
-        sala: reserva.sala,
-        dataInicio,
-        dataFim,
-        responsavel: reserva.responsavel,
-        cafeQuantidade: reserva.cafe?.quantidade,
-        cafeDescricao: reserva.cafe?.descricao || '',
-      });
+      setSalaSelecionada(reserva.salaId || null);
+      const dataInicio = new Date(reserva.dataHoraInicio);
+      setData(dataInicio.toISOString().split('T')[0]);
+      const hora = dataInicio.toTimeString().slice(0, 5); // HH:MM
+      setHoraSelecionada(hora);
+      setCafeQuantidade(reserva.cafeQuantidade || '');
+      setCafeDescricao(reserva.cafeDescricao || '');
     }
   }, [isEdit, reserva]);
 
+  // Recarrega horários quando sala ou data mudam
+  useEffect(() => {
+    if (salaSelecionada && data) {
+      refetchHorarios();
+      setHoraSelecionada(null); // Limpa seleção de horário ao mudar sala/data
+    }
+  }, [salaSelecionada, data, refetchHorarios]);
+
   const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-
-    if (!formData.local.trim()) {
-      newErrors.local = 'Local é obrigatório';
+    if (!salaSelecionada) {
+      setSubmitError('Selecione uma sala');
+      return false;
     }
-    if (!formData.sala.trim()) {
-      newErrors.sala = 'Sala é obrigatória';
+    if (!data) {
+      setSubmitError('Selecione uma data');
+      return false;
     }
-    if (!formData.dataInicio) {
-      newErrors.dataInicio = 'Data/hora de início é obrigatória';
+    if (!horaSelecionada) {
+      setSubmitError('Selecione um horário');
+      return false;
     }
-    if (!formData.dataFim) {
-      newErrors.dataFim = 'Data/hora de fim é obrigatória';
+    if (cafeQuantidade !== '' && (isNaN(Number(cafeQuantidade)) || Number(cafeQuantidade) < 1)) {
+      setSubmitError('Quantidade de café deve ser um número maior que zero');
+      return false;
     }
-    if (!formData.responsavel.trim()) {
-      newErrors.responsavel = 'Responsável é obrigatório';
+    if (cafeQuantidade !== '' && !cafeDescricao.trim()) {
+      setSubmitError('Descrição do café é obrigatória quando quantidade é informada');
+      return false;
     }
-
-    if (formData.dataInicio && formData.dataFim) {
-      const inicio = new Date(formData.dataInicio);
-      const fim = new Date(formData.dataFim);
-      
-      if (fim <= inicio) {
-        newErrors.dataFim = 'Data/hora de fim deve ser posterior à data/hora de início';
-      }
-    }
-
-    if (formData.cafeQuantidade && formData.cafeQuantidade <= 0) {
-      newErrors.cafeQuantidade = 'Quantidade de café deve ser maior que zero';
-    }
-
-    if (formData.cafeQuantidade && !formData.cafeDescricao.trim()) {
-      newErrors.cafeDescricao = 'Descrição do café é obrigatória quando quantidade é informada';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitError('');
-    setErrors({});
 
     if (!validate()) {
       return;
     }
 
     try {
+      const formData: ReservaFormData = {
+        salaId: salaSelecionada!,
+        data,
+        hora: horaSelecionada!,
+        ...(cafeQuantidade !== '' && { cafeQuantidade: Number(cafeQuantidade) }),
+        ...(cafeDescricao && { cafeDescricao }),
+      };
+
       let result;
       if (isEdit) {
-        result = await handleUpdate(id!, formData);
+        result = await handleUpdate(parseInt(id!), formData);
       } else {
         result = await handleCreate(formData);
       }
@@ -130,7 +129,16 @@ export const ReservaForm = () => {
     }
   };
 
-  const loading = creating || updating || loadingReserva;
+  const loading = creating || updating || loadingReserva || loadingSalas;
+
+  // Data mínima é hoje
+  const hoje = new Date().toISOString().split('T')[0];
+
+  // Gera lista de horários de 08:00 a 18:00
+  const todosHorarios = Array.from({ length: 11 }, (_, i) => {
+    const hora = 8 + i;
+    return `${String(hora).padStart(2, '0')}:00`;
+  });
 
   if (isEdit && loadingReserva) {
     return (
@@ -141,14 +149,14 @@ export const ReservaForm = () => {
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-2xl">
+    <div className="container mx-auto p-6 max-w-4xl">
       <Card>
         <CardHeader>
           <CardTitle>{isEdit ? 'Editar Reserva' : 'Nova Reserva'}</CardTitle>
           <CardDescription>
             {isEdit
               ? 'Atualize as informações da reserva'
-              : 'Preencha os dados para criar uma nova reserva'}
+              : 'Selecione a sala, data e horário para criar uma nova reserva'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -159,98 +167,113 @@ export const ReservaForm = () => {
               </Alert>
             )}
 
-            <FormItem>
-              <FormLabel htmlFor="local">
-                Local <span className="text-destructive">*</span>
-              </FormLabel>
-              <FormControl>
-                <Input
-                  id="local"
-                  value={formData.local}
-                  onChange={(e) =>
-                    setFormData({ ...formData, local: e.target.value })
-                  }
-                  disabled={loading}
-                  placeholder="Ex: Matriz, Filial SP"
-                />
-              </FormControl>
-              {errors.local && <FormMessage>{errors.local}</FormMessage>}
-            </FormItem>
-
+            {/* Seleção de Sala */}
             <FormItem>
               <FormLabel htmlFor="sala">
                 Sala <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
-                <Input
+                <select
                   id="sala"
-                  value={formData.sala}
-                  onChange={(e) =>
-                    setFormData({ ...formData, sala: e.target.value })
-                  }
-                  disabled={loading}
-                  placeholder="Ex: Sala 1, Sala de Reuniões A"
-                />
+                  value={salaSelecionada || ''}
+                  onChange={(e) => {
+                    setSalaSelecionada(e.target.value ? parseInt(e.target.value) : null);
+                    setHoraSelecionada(null);
+                  }}
+                  disabled={loading || loadingSalas}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                >
+                  <option value="">-- Selecione uma sala --</option>
+                  {salas.map((sala: Sala) => (
+                    <option key={sala.id} value={sala.id}>
+                      {sala.nome} - {sala.local}
+                      {sala.capacidade && ` (${sala.capacidade} pessoas)`}
+                    </option>
+                  ))}
+                </select>
               </FormControl>
-              {errors.sala && <FormMessage>{errors.sala}</FormMessage>}
             </FormItem>
 
-            <div className="grid grid-cols-2 gap-4">
-              <FormItem>
-                <FormLabel htmlFor="dataInicio">
-                  Data/Hora Início <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    id="dataInicio"
-                    type="datetime-local"
-                    value={formData.dataInicio}
-                    onChange={(e) =>
-                      setFormData({ ...formData, dataInicio: e.target.value })
-                    }
-                    disabled={loading}
-                  />
-                </FormControl>
-                {errors.dataInicio && <FormMessage>{errors.dataInicio}</FormMessage>}
-              </FormItem>
-
-              <FormItem>
-                <FormLabel htmlFor="dataFim">
-                  Data/Hora Fim <span className="text-destructive">*</span>
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    id="dataFim"
-                    type="datetime-local"
-                    value={formData.dataFim}
-                    onChange={(e) =>
-                      setFormData({ ...formData, dataFim: e.target.value })
-                    }
-                    disabled={loading}
-                  />
-                </FormControl>
-                {errors.dataFim && <FormMessage>{errors.dataFim}</FormMessage>}
-              </FormItem>
-            </div>
-
+            {/* Seleção de Data */}
             <FormItem>
-              <FormLabel htmlFor="responsavel">
-                Responsável <span className="text-destructive">*</span>
+              <FormLabel htmlFor="data">
+                Data <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
                 <Input
-                  id="responsavel"
-                  value={formData.responsavel}
-                  onChange={(e) =>
-                    setFormData({ ...formData, responsavel: e.target.value })
-                  }
+                  id="data"
+                  type="date"
+                  value={data}
+                  onChange={(e) => {
+                    setData(e.target.value);
+                    setHoraSelecionada(null);
+                  }}
+                  min={hoje}
                   disabled={loading}
-                  placeholder="Nome do responsável"
+                  required
                 />
               </FormControl>
-              {errors.responsavel && <FormMessage>{errors.responsavel}</FormMessage>}
             </FormItem>
 
+            {/* Horários Disponíveis */}
+            {salaSelecionada && data && (
+              <FormItem>
+                <FormLabel>
+                  Horário Disponível <span className="text-destructive">*</span>
+                </FormLabel>
+                {loadingHorarios ? (
+                  <div className="text-sm text-muted-foreground py-4">Carregando horários disponíveis...</div>
+                ) : horarios.length === 0 ? (
+                  <Alert className="mt-2">
+                    <AlertDescription>
+                      Não há horários disponíveis para esta sala nesta data.
+                    </AlertDescription>
+                  </Alert>
+                ) : (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-2">
+                    {todosHorarios.map((hora) => {
+                      const disponivel = horarios.includes(hora);
+                      const selecionado = horaSelecionada === hora;
+                      const horaFim = `${String(parseInt(hora.split(':')[0]) + 1).padStart(2, '0')}:00`;
+
+                      return (
+                        <button
+                          key={hora}
+                          type="button"
+                          onClick={() => {
+                            if (disponivel) {
+                              setHoraSelecionada(hora);
+                            }
+                          }}
+                          disabled={!disponivel || loading}
+                          className={`
+                            px-4 py-2 rounded-md text-sm font-medium transition-colors
+                            ${
+                              selecionado
+                                ? 'bg-primary text-primary-foreground'
+                                : disponivel
+                                ? 'bg-background border-2 border-input hover:bg-accent hover:text-accent-foreground cursor-pointer'
+                                : 'bg-muted text-muted-foreground border-2 border-muted cursor-not-allowed opacity-50'
+                            }
+                            disabled:opacity-50 disabled:cursor-not-allowed
+                          `}
+                        >
+                          {hora} - {horaFim}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {horaSelecionada && (
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Horário selecionado: {horaSelecionada} - {`${String(parseInt(horaSelecionada.split(':')[0]) + 1).padStart(2, '0')}:00`}
+                  </p>
+                )}
+              </FormItem>
+            )}
+
+            {/* Opções de Café */}
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-medium mb-4">Opções de Café (Opcional)</h3>
               
@@ -261,23 +284,15 @@ export const ReservaForm = () => {
                     <Input
                       id="cafeQuantidade"
                       type="number"
-                      min="0"
-                      value={formData.cafeQuantidade || ''}
+                      min="1"
+                      value={cafeQuantidade}
                       onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          cafeQuantidade: e.target.value
-                            ? parseInt(e.target.value)
-                            : undefined,
-                        })
+                        setCafeQuantidade(e.target.value === '' ? '' : Number(e.target.value))
                       }
                       disabled={loading}
                       placeholder="0"
                     />
                   </FormControl>
-                  {errors.cafeQuantidade && (
-                    <FormMessage>{errors.cafeQuantidade}</FormMessage>
-                  )}
                 </FormItem>
 
                 <FormItem>
@@ -285,17 +300,12 @@ export const ReservaForm = () => {
                   <FormControl>
                     <Input
                       id="cafeDescricao"
-                      value={formData.cafeDescricao}
-                      onChange={(e) =>
-                        setFormData({ ...formData, cafeDescricao: e.target.value })
-                      }
+                      value={cafeDescricao}
+                      onChange={(e) => setCafeDescricao(e.target.value)}
                       disabled={loading}
                       placeholder="Ex: Café expresso, Cappuccino"
                     />
                   </FormControl>
-                  {errors.cafeDescricao && (
-                    <FormMessage>{errors.cafeDescricao}</FormMessage>
-                  )}
                 </FormItem>
               </div>
             </div>
@@ -325,4 +335,3 @@ export const ReservaForm = () => {
     </div>
   );
 };
-

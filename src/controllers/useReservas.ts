@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_RESERVAS, GET_RESERVA } from '@/graphql/queries/reservas';
+import { GET_RESERVAS, GET_RESERVA, GET_HORARIOS_DISPONIVEIS_POR_HORA } from '@/graphql/queries/reservas';
 import { CREATE_RESERVA, UPDATE_RESERVA, DELETE_RESERVA } from '@/graphql/mutations/reservas';
 import { ReservaInput, ReservaUpdateInput, ReservaFormData } from '@/models/Reserva';
 
@@ -16,16 +16,41 @@ export const useReservas = (skip = 0, limit = 100) => {
   };
 };
 
-export const useReserva = (reservaId: number) => {
+export const useReserva = (reservaId: string | number) => {
+  const id = typeof reservaId === 'string' ? parseInt(reservaId) : reservaId;
   const { data, loading, error } = useQuery(GET_RESERVA, {
-    variables: { reservaId },
-    skip: !reservaId,
+    variables: { reservaId: id },
+    skip: !id || isNaN(id),
   });
 
   return {
     reserva: data?.reserva,
     loading,
     error,
+  };
+};
+
+export const useHorariosDisponiveisPorHora = (
+  salaId: number | null,
+  data: string | null,
+  horaInicio = '08:00:00',
+  horaFim = '18:00:00'
+) => {
+  const { data: queryData, loading, error, refetch } = useQuery(GET_HORARIOS_DISPONIVEIS_POR_HORA, {
+    variables: {
+      salaId: salaId!,
+      data: data!,
+      horaInicio,
+      horaFim,
+    },
+    skip: !salaId || !data,
+  });
+
+  return {
+    horarios: queryData?.horariosDisponiveisPorHora || [],
+    loading,
+    error,
+    refetch,
   };
 };
 
@@ -36,11 +61,21 @@ export const useCreateReserva = () => {
 
   const handleCreate = async (formData: ReservaFormData) => {
     try {
+      if (!formData.salaId || !formData.data || !formData.hora) {
+        throw new Error('Sala, data e horário são obrigatórios');
+      }
+
+      // Constrói dataHoraInicio e dataHoraFim a partir de data e hora
+      // A reserva é sempre de 1 hora
+      const dataHoraInicio = `${formData.data}T${formData.hora}:00`;
+      const [hora, minuto] = formData.hora.split(':');
+      const horaFim = String(parseInt(hora) + 1).padStart(2, '0');
+      const dataHoraFim = `${formData.data}T${horaFim}:${minuto}:00`;
+
       const reserva: ReservaInput = {
-        local: formData.local,
-        sala: formData.sala,
-        dataHoraInicio: formData.dataHoraInicio,
-        dataHoraFim: formData.dataHoraFim,
+        salaId: formData.salaId,
+        dataHoraInicio,
+        dataHoraFim,
         ...(formData.cafeQuantidade && { cafeQuantidade: formData.cafeQuantidade }),
         ...(formData.cafeDescricao && { cafeDescricao: formData.cafeDescricao }),
       };
@@ -75,10 +110,20 @@ export const useUpdateReserva = () => {
     try {
       const reserva: ReservaUpdateInput = {};
       
+      if (formData.salaId) reserva.salaId = formData.salaId;
       if (formData.local) reserva.local = formData.local;
       if (formData.sala) reserva.sala = formData.sala;
-      if (formData.dataHoraInicio) reserva.dataHoraInicio = formData.dataHoraInicio;
-      if (formData.dataHoraFim) reserva.dataHoraFim = formData.dataHoraFim;
+      
+      // Se data e hora foram fornecidos, calcular dataHoraInicio e dataHoraFim
+      if (formData.data && formData.hora) {
+        const dataHoraInicio = `${formData.data}T${formData.hora}:00`;
+        const [hora, minuto] = formData.hora.split(':');
+        const horaFim = String(parseInt(hora) + 1).padStart(2, '0');
+        const dataHoraFim = `${formData.data}T${horaFim}:${minuto}:00`;
+        reserva.dataHoraInicio = dataHoraInicio;
+        reserva.dataHoraFim = dataHoraFim;
+      }
+      
       if (formData.cafeQuantidade !== undefined) reserva.cafeQuantidade = formData.cafeQuantidade;
       if (formData.cafeDescricao) reserva.cafeDescricao = formData.cafeDescricao;
 
@@ -108,10 +153,15 @@ export const useDeleteReserva = () => {
     refetchQueries: [{ query: GET_RESERVAS }],
   });
 
-  const handleDelete = async (reservaId: number) => {
+  const handleDelete = async (reservaId: string | number) => {
     try {
+      const id = typeof reservaId === 'string' ? parseInt(reservaId) : reservaId;
+      if (isNaN(id)) {
+        throw new Error('ID de reserva inválido');
+      }
+
       const { data } = await deleteReserva({
-        variables: { reservaId },
+        variables: { reservaId: id },
       });
 
       return { success: data?.deletarReserva || false };

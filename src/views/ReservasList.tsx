@@ -1,5 +1,6 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useReservas } from '@/controllers/useReservas';
+import { useSalas } from '@/controllers/useSalas';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -12,16 +13,51 @@ import {
 } from '@/components/ui/table';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { DeleteReservaModal } from '@/components/DeleteReservaModal';
 import { useDeleteReserva } from '@/controllers/useReservas';
+import { Sala } from '@/models/Sala';
 
 export const ReservasList = () => {
   const navigate = useNavigate();
-  const { reservas, loading, error } = useReservas();
+  const location = useLocation();
+  const { reservas, loading, error, refetch } = useReservas();
+  const { salas, loading: loadingSalas } = useSalas(0, 100, false); // Carrega todas as salas
   const { handleDelete } = useDeleteReserva();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [reservaToDelete, setReservaToDelete] = useState<string | null>(null);
+
+  // Recarrega a lista quando voltar para esta rota (após criar/editar reserva)
+  useEffect(() => {
+    if (location.pathname === '/reservas') {
+      refetch();
+    }
+  }, [location.pathname, refetch]);
+
+  // Cria um mapa de salas por ID para busca rápida
+  const salasMap = useMemo(() => {
+    const map = new Map<number, Sala>();
+    salas.forEach((sala: Sala) => {
+      map.set(sala.id, sala);
+    });
+    return map;
+  }, [salas]);
+
+  // Função auxiliar para obter informações da sala
+  const getSalaInfo = (reserva: any) => {
+    if (reserva.salaId && salasMap.has(reserva.salaId)) {
+      const sala = salasMap.get(reserva.salaId)!;
+      return {
+        nome: sala.nome,
+        local: sala.local,
+      };
+    }
+    // Fallback para dados antigos que podem ter apenas string
+    return {
+      nome: reserva.sala || '-',
+      local: reserva.local || '-',
+    };
+  };
 
   const handleEdit = (id: string) => {
     navigate(`/reservas/${id}/editar`);
@@ -38,11 +74,13 @@ export const ReservasList = () => {
       if (result.success) {
         setDeleteModalOpen(false);
         setReservaToDelete(null);
+        // Recarrega a lista após deletar
+        await refetch();
       }
     }
   };
 
-  if (loading) {
+  if (loading || loadingSalas) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">Carregando reservas...</div>
@@ -86,46 +124,51 @@ export const ReservasList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reservas.map((reserva: any) => (
-                  <TableRow key={reserva.id}>
-                    <TableCell>{reserva.local}</TableCell>
-                    <TableCell>{reserva.sala}</TableCell>
-                    <TableCell>
-                      {format(new Date(reserva.dataInicio), "dd/MM/yyyy HH:mm", {
-                        locale: ptBR,
-                      })}
-                    </TableCell>
-                    <TableCell>
-                      {format(new Date(reserva.dataFim), "dd/MM/yyyy HH:mm", {
-                        locale: ptBR,
-                      })}
-                    </TableCell>
-                    <TableCell>{reserva.responsavel}</TableCell>
-                    <TableCell>
-                      {reserva.cafe
-                        ? `${reserva.cafe.quantidade} - ${reserva.cafe.descricao}`
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(reserva.id)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDeleteClick(reserva.id)}
-                        >
-                          Excluir
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {reservas.map((reserva: any) => {
+                  const salaInfo = getSalaInfo(reserva);
+                  return (
+                    <TableRow key={reserva.id}>
+                      <TableCell>{salaInfo.local}</TableCell>
+                      <TableCell>{salaInfo.nome}</TableCell>
+                      <TableCell>
+                        {format(new Date(reserva.dataHoraInicio), "dd/MM/yyyy HH:mm", {
+                          locale: ptBR,
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {format(new Date(reserva.dataHoraFim), "dd/MM/yyyy HH:mm", {
+                          locale: ptBR,
+                        })}
+                      </TableCell>
+                      <TableCell>ID: {reserva.responsavelId}</TableCell>
+                      <TableCell>
+                        {reserva.cafeQuantidade && reserva.cafeDescricao
+                          ? `${reserva.cafeQuantidade} - ${reserva.cafeDescricao}`
+                          : reserva.cafeQuantidade
+                          ? `${reserva.cafeQuantidade}`
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEdit(reserva.id.toString())}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDeleteClick(reserva.id.toString())}
+                          >
+                            Excluir
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           )}
