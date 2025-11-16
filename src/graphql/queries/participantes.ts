@@ -75,3 +75,38 @@ export const CONTAR_RESERVAS_NAO_VISTAS = gql`
   }
 `;
 
+export const GET_MEU_HISTORICO = gql`
+  query GetMeuHistorico($apenasFuturas: Boolean, $apenasPassadas: Boolean, $skip: Int, $limit: Int) {
+    meuHistorico(apenasFuturas: $apenasFuturas, apenasPassadas: $apenasPassadas, skip: $skip, limit: $limit) {
+      reserva {
+        id
+        local
+        sala
+        salaId
+        dataHoraInicio
+        dataHoraFim
+        responsavelId
+        responsavel {
+          id
+          nome
+          username
+          email
+        }
+        salaRel {
+          id
+          nome
+          local
+          capacidade
+          descricao
+        }
+        cafeQuantidade
+        cafeDescricao
+        linkMeet
+        createdAt
+        updatedAt
+      }
+      souResponsavel
+    }
+  }
+`;
+

@@ -18,6 +18,7 @@ export const GET_RESERVAS = gql`
       }
       cafeQuantidade
       cafeDescricao
+      linkMeet
       createdAt
       updatedAt
     }
@@ -42,6 +43,7 @@ export const GET_RESERVA = gql`
       }
       cafeQuantidade
       cafeDescricao
+      linkMeet
       createdAt
       updatedAt
     }
@@ -82,6 +84,7 @@ export const GET_RESERVAS_POR_SALA = gql`
       }
       cafeQuantidade
       cafeDescricao
+      linkMeet
       createdAt
       updatedAt
     }

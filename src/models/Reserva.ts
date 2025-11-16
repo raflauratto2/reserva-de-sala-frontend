@@ -16,6 +16,7 @@ export interface Reserva {
   responsavel?: Responsavel | null;
   cafeQuantidade?: number | null;
   cafeDescricao?: string | null;
+  linkMeet?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -28,6 +29,7 @@ export interface ReservaInput {
   dataHoraFim: string;
   cafeQuantidade?: number;
   cafeDescricao?: string;
+  linkMeet?: string;
 }
 
 export interface ReservaUpdateInput {
@@ -38,6 +40,7 @@ export interface ReservaUpdateInput {
   dataHoraFim?: string;
   cafeQuantidade?: number;
   cafeDescricao?: string;
+  linkMeet?: string;
 }
 
 export interface ReservaFormData {
@@ -48,5 +51,6 @@ export interface ReservaFormData {
   hora: string;
   cafeQuantidade?: number;
   cafeDescricao?: string;
+  linkMeet?: string;
 }
 

@@ -79,6 +79,17 @@ export const Layout = () => {
                 >
                   Salas
                 </Link>
+                <Link
+                  to="/historico"
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary",
+                    location.pathname.startsWith('/historico')
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  Histórico
+                </Link>
                 {user?.admin && (
                   <Link
                     to="/usuarios"

@@ -12,6 +12,7 @@ export const CREATE_RESERVA = gql`
       responsavelId
       cafeQuantidade
       cafeDescricao
+      linkMeet
       createdAt
       updatedAt
     }
@@ -30,6 +31,7 @@ export const UPDATE_RESERVA = gql`
       responsavelId
       cafeQuantidade
       cafeDescricao
+      linkMeet
       createdAt
       updatedAt
     }

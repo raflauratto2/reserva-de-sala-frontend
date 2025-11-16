@@ -11,6 +11,7 @@ import { ReservaForm } from '@/views/ReservaForm';
 import { SalasList } from '@/views/SalasList';
 import { UsuariosList } from '@/views/UsuariosList';
 import { Dashboard } from '@/views/Dashboard';
+import { Historico } from '@/views/Historico';
 import { useAuthStore } from '@/store/auth-store';
 import { ToastProvider } from '@/contexts/ToastContext';
 
@@ -68,6 +69,16 @@ function AppRoutes() {
         }
       >
         <Route index element={<SalasList />} />
+      </Route>
+      <Route
+        path="/historico"
+        element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Historico />} />
       </Route>
       <Route
         path="/usuarios"

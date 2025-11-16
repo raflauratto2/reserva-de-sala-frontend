@@ -78,6 +78,7 @@ export const useCreateReserva = () => {
         dataHoraFim,
         ...(formData.cafeQuantidade && { cafeQuantidade: formData.cafeQuantidade }),
         ...(formData.cafeDescricao && { cafeDescricao: formData.cafeDescricao }),
+        ...(formData.linkMeet && { linkMeet: formData.linkMeet }),
       };
 
       const { data } = await createReserva({
@@ -126,6 +127,7 @@ export const useUpdateReserva = () => {
       
       if (formData.cafeQuantidade !== undefined) reserva.cafeQuantidade = formData.cafeQuantidade;
       if (formData.cafeDescricao) reserva.cafeDescricao = formData.cafeDescricao;
+      if (formData.linkMeet !== undefined) reserva.linkMeet = formData.linkMeet;
 
       const { data } = await updateReserva({
         variables: { reservaId, reserva },

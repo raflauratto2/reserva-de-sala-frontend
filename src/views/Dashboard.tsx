@@ -1,11 +1,14 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useReservas } from '@/controllers/useReservas';
 import { useSalas } from '@/controllers/useSalas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { format, startOfToday, addDays, isAfter, isBefore, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export const Dashboard = () => {
+  const navigate = useNavigate();
   const { reservas, loading: loadingReservas } = useReservas(0, 1000);
   const { salas, loading: loadingSalas } = useSalas(0, 1000, false);
 
@@ -246,22 +249,33 @@ export const Dashboard = () => {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-              {proximosDiasLivres.map((dia, index) => (
-                <div
-                  key={index}
-                  className="border rounded-lg p-4 text-center bg-green-50 border-green-200"
-                >
-                  <div className="text-sm font-medium text-green-800 capitalize">
-                    {dia.diaSemana}
+              {proximosDiasLivres.map((dia, index) => {
+                const dataFormatada = format(dia.data, 'yyyy-MM-dd');
+                return (
+                  <div
+                    key={index}
+                    className="border rounded-lg p-4 text-center bg-green-50 border-green-200 flex flex-col"
+                  >
+                    <div className="text-sm font-medium text-green-800 capitalize">
+                      {dia.diaSemana}
+                    </div>
+                    <div className="text-lg font-bold text-green-900 mt-1">
+                      {format(dia.data, 'dd/MM', { locale: ptBR })}
+                    </div>
+                    <div className="text-xs text-green-600 mt-1 mb-3">
+                      Disponível
+                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => navigate(`/reservas/nova?data=${dataFormatada}`)}
+                      className="w-full border-green-300 text-green-700 hover:bg-green-50 hover:border-green-400"
+                    >
+                      Reservar
+                    </Button>
                   </div>
-                  <div className="text-lg font-bold text-green-900 mt-1">
-                    {format(dia.data, 'dd/MM', { locale: ptBR })}
-                  </div>
-                  <div className="text-xs text-green-600 mt-1">
-                    Disponível
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

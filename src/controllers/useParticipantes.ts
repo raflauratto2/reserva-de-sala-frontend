@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from '@apollo/client';
-import { GET_USUARIOS_NAO_ADMIN, GET_PARTICIPANTES_RESERVA, GET_MINHAS_RESERVAS_CONVIDADAS, CONTAR_RESERVAS_NAO_VISTAS } from '@/graphql/queries/participantes';
+import { GET_USUARIOS_NAO_ADMIN, GET_PARTICIPANTES_RESERVA, GET_MINHAS_RESERVAS_CONVIDADAS, CONTAR_RESERVAS_NAO_VISTAS, GET_MEU_HISTORICO } from '@/graphql/queries/participantes';
 import { ADICIONAR_PARTICIPANTE, REMOVER_PARTICIPANTE, MARCAR_RESERVA_COMO_NOTIFICADA, MARCAR_RESERVA_COMO_VISTA } from '@/graphql/mutations/participantes';
 import { User } from '@/models/User';
 import { useAuthStore } from '@/store/auth-store';
@@ -181,5 +181,53 @@ export const useMarcarReservaComoVista = () => {
   };
 
   return { handleMarcar, loading };
+};
+
+export interface HistoricoItem {
+  reserva: {
+    id: number;
+    local?: string | null;
+    sala?: string | null;
+    salaId?: number | null;
+    dataHoraInicio: string;
+    dataHoraFim: string;
+    responsavelId: number;
+    responsavel?: {
+      id: number;
+      nome?: string | null;
+      username: string;
+      email: string;
+    } | null;
+    salaRel?: {
+      id: number;
+      nome: string;
+      local?: string | null;
+      capacidade?: number | null;
+      descricao?: string | null;
+    } | null;
+    cafeQuantidade?: number | null;
+    cafeDescricao?: string | null;
+    linkMeet?: string | null;
+    createdAt: string;
+    updatedAt: string;
+  };
+  souResponsavel: boolean;
+}
+
+export const useMeuHistorico = (apenasFuturas = false, apenasPassadas = false, skip = 0, limit = 1000) => {
+  const { isAuthenticated } = useAuthStore();
+  const { data, loading, error, refetch } = useQuery(GET_MEU_HISTORICO, {
+    skip: !isAuthenticated,
+    variables: { apenasFuturas, apenasPassadas, skip, limit },
+    errorPolicy: 'all',
+    fetchPolicy: 'cache-and-network',
+  });
+
+  return {
+    historico: (data?.meuHistorico || []) as HistoricoItem[],
+    loading,
+    error,
+    refetch,
+  };
 };
 

@@ -257,6 +257,7 @@ export const ReservasList = () => {
                   <TableHead>Fim</TableHead>
                   <TableHead>Responsável</TableHead>
                   <TableHead>Café</TableHead>
+                  <TableHead>Link Meet</TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -288,6 +289,20 @@ export const ReservasList = () => {
                           : reserva.cafeQuantidade
                           ? `${reserva.cafeQuantidade}`
                           : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {reserva.linkMeet ? (
+                          <a
+                            href={reserva.linkMeet}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline text-sm"
+                          >
+                            Acessar
+                          </a>
+                        ) : (
+                          '-'
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         {user && reserva.responsavelId === user.id && (

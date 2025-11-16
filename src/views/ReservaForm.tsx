@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useCreateReserva, useUpdateReserva, useReserva, useHorariosDisponiveisPorHora } from '@/controllers/useReservas';
 import { useSalas } from '@/controllers/useSalas';
 import { useUsuariosNaoAdmin, useAdicionarParticipante, useRemoverParticipante, useParticipantesReserva } from '@/controllers/useParticipantes';
@@ -17,6 +17,7 @@ export const ReservaForm = () => {
   const { showToast, ToastContainer } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const isEdit = !!id;
   const { reserva, loading: loadingReserva } = useReserva(id || '');
   const { handleCreate, loading: creating } = useCreateReserva();
@@ -28,6 +29,7 @@ export const ReservaForm = () => {
   const [horaSelecionada, setHoraSelecionada] = useState<string | null>(null);
   const [cafeQuantidade, setCafeQuantidade] = useState<number | ''>('');
   const [cafeDescricao, setCafeDescricao] = useState('');
+  const [linkMeet, setLinkMeet] = useState('');
   const [participantesSelecionados, setParticipantesSelecionados] = useState<number[]>([]);
   const [submitError, setSubmitError] = useState('');
 
@@ -57,8 +59,19 @@ export const ReservaForm = () => {
       setHoraSelecionada(hora);
       setCafeQuantidade(reserva.cafeQuantidade || '');
       setCafeDescricao(reserva.cafeDescricao || '');
+      setLinkMeet(reserva.linkMeet || '');
     }
   }, [isEdit, reserva]);
+
+  // Carrega data da URL quando criar nova reserva
+  useEffect(() => {
+    if (!isEdit) {
+      const dataParam = searchParams.get('data');
+      if (dataParam) {
+        setData(dataParam);
+      }
+    }
+  }, [isEdit, searchParams]);
 
   // Carrega participantes existentes ao editar
   useEffect(() => {
@@ -115,6 +128,7 @@ export const ReservaForm = () => {
         hora: horaSelecionada!,
         ...(cafeQuantidade !== '' && { cafeQuantidade: Number(cafeQuantidade) }),
         ...(cafeDescricao && { cafeDescricao }),
+        ...(linkMeet && { linkMeet }),
       };
 
       let result;
@@ -378,6 +392,24 @@ export const ReservaForm = () => {
                   )}
                 </div>
               )}
+            </div>
+
+            {/* Link Meet */}
+            <div className="border-t pt-4 mt-4">
+              <FormItem>
+                <FormLabel htmlFor="linkMeet">Link Meet (Opcional)</FormLabel>
+                <FormControl>
+                  <Input
+                    id="linkMeet"
+                    type="url"
+                    value={linkMeet}
+                    onChange={(e) => setLinkMeet(e.target.value)}
+                    disabled={loading}
+                    placeholder="https://meet.google.com/abc-defg-hij"
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             </div>
 
             {/* Opções de Café */}
