@@ -44,7 +44,7 @@ export const ReservaForm = () => {
     salaSelecionada,
     data,
     '08:00:00',
-    '18:00:00'
+    '17:00:00'
   );
 
   // Carrega dados da reserva ao editar
@@ -191,8 +191,8 @@ export const ReservaForm = () => {
   // Data mínima é hoje
   const hoje = new Date().toISOString().split('T')[0];
 
-  // Gera lista de horários de 08:00 a 18:00
-  const todosHorarios = Array.from({ length: 11 }, (_, i) => {
+  // Gera lista de horários de 08:00 a 17:00
+  const todosHorarios = Array.from({ length: 10 }, (_, i) => {
     const hora = 8 + i;
     return `${String(hora).padStart(2, '0')}:00`;
   });

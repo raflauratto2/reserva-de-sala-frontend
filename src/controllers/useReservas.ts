@@ -34,7 +34,7 @@ export const useHorariosDisponiveisPorHora = (
   salaId: number | null,
   data: string | null,
   horaInicio = '08:00:00',
-  horaFim = '18:00:00'
+  horaFim = '17:00:00'
 ) => {
   const { data: queryData, loading, error, refetch } = useQuery(GET_HORARIOS_DISPONIVEIS_POR_HORA, {
     variables: {
