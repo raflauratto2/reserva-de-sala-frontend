@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormItem, FormLabel, FormControl } from '@/components/ui/form';
-import { Link } from 'react-router-dom';
 import { useToast } from '@/components/ui/toast';
 
 export const Login = () => {
@@ -129,13 +128,6 @@ export const Login = () => {
             <Button type="submit" className="w-full" disabled={loginLoading}>
               {loginLoading ? 'Entrando...' : 'Entrar'}
             </Button>
-
-            <div className="mt-4 text-center text-sm">
-              <span className="text-gray-600">Não tem uma conta? </span>
-              <Link to="/register" className="text-blue-600 hover:underline">
-                Criar conta
-              </Link>
-            </div>
           </Form>
         </CardContent>
       </Card>

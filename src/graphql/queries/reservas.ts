@@ -10,6 +10,12 @@ export const GET_RESERVAS = gql`
       dataHoraInicio
       dataHoraFim
       responsavelId
+      responsavel {
+        id
+        nome
+        username
+        email
+      }
       cafeQuantidade
       cafeDescricao
       createdAt
@@ -28,6 +34,12 @@ export const GET_RESERVA = gql`
       dataHoraInicio
       dataHoraFim
       responsavelId
+      responsavel {
+        id
+        nome
+        username
+        email
+      }
       cafeQuantidade
       cafeDescricao
       createdAt
@@ -62,6 +74,12 @@ export const GET_RESERVAS_POR_SALA = gql`
       dataHoraInicio
       dataHoraFim
       responsavelId
+      responsavel {
+        id
+        nome
+        username
+        email
+      }
       cafeQuantidade
       cafeDescricao
       createdAt

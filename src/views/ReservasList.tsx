@@ -1,9 +1,9 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useReservas } from '@/controllers/useReservas';
 import { useSalas } from '@/controllers/useSalas';
-import { useUsuarios } from '@/controllers/useUsuarios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -17,35 +17,26 @@ import { ptBR } from 'date-fns/locale';
 import { useState, useEffect, useMemo } from 'react';
 import { DeleteReservaModal } from '@/components/DeleteReservaModal';
 import { useDeleteReserva } from '@/controllers/useReservas';
+import { useToast } from '@/components/ui/toast';
 import { Sala } from '@/models/Sala';
-import { User } from '@/models/User';
+import { useAuthStore } from '@/store/auth-store';
 
 export const ReservasList = () => {
+  const { showToast, ToastContainer } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
   const { reservas, loading, error, refetch } = useReservas();
   const { salas, loading: loadingSalas } = useSalas(0, 100, false); // Carrega todas as salas
-  const { usuarios, loading: loadingUsuarios, error: errorUsuarios } = useUsuarios(0, 100); // Carrega todos os usuários
   const { handleDelete } = useDeleteReserva();
-  
-  // Log para debug
-  useEffect(() => {
-    if (errorUsuarios) {
-      console.error('Erro ao carregar usuários:', errorUsuarios);
-      console.error('Detalhes do erro:', {
-        message: errorUsuarios.message,
-        graphQLErrors: errorUsuarios.graphQLErrors,
-        networkError: errorUsuarios.networkError,
-      });
-    }
-    if (usuarios.length > 0) {
-      console.log('Usuários carregados com sucesso:', usuarios.length);
-    } else if (!loadingUsuarios && !errorUsuarios) {
-      console.warn('Nenhum usuário carregado, mas não há erro. Verifique se a query "usuarios" existe no backend.');
-    }
-  }, [errorUsuarios, usuarios, loadingUsuarios]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [reservaToDelete, setReservaToDelete] = useState<string | null>(null);
+  
+  // Filtros
+  const [filtroSala, setFiltroSala] = useState<number | ''>('');
+  const [filtroData, setFiltroData] = useState('');
+  const [filtroResponsavel, setFiltroResponsavel] = useState('');
+  const [filtroLocal, setFiltroLocal] = useState('');
 
   // Recarrega a lista quando voltar para esta rota (após criar/editar reserva)
   useEffect(() => {
@@ -63,16 +54,6 @@ export const ReservasList = () => {
     return map;
   }, [salas]);
 
-  // Cria um mapa de usuários por ID para busca rápida
-  const usuariosMap = useMemo(() => {
-    const map = new Map<number, User>();
-    usuarios.forEach((usuario: User) => {
-      map.set(usuario.id, usuario);
-    });
-    console.log('Mapa de usuários criado:', map.size, 'usuários');
-    return map;
-  }, [usuarios]);
-
   // Função auxiliar para obter informações da sala
   const getSalaInfo = (reserva: any) => {
     if (reserva.salaId && salasMap.has(reserva.salaId)) {
@@ -89,6 +70,43 @@ export const ReservasList = () => {
     };
   };
 
+  // Filtra reservas
+  const reservasFiltradas = useMemo(() => {
+    return reservas.filter((reserva: any) => {
+      const salaInfo = getSalaInfo(reserva);
+      
+      // Filtro por sala
+      if (filtroSala !== '' && reserva.salaId !== filtroSala) {
+        return false;
+      }
+      
+      // Filtro por data
+      if (filtroData) {
+        const reservaData = new Date(reserva.dataHoraInicio).toISOString().split('T')[0];
+        if (reservaData !== filtroData) {
+          return false;
+        }
+      }
+      
+      // Filtro por responsável
+      if (filtroResponsavel) {
+        const responsavelNome = reserva.responsavel?.nome?.toLowerCase() || '';
+        const responsavelUsername = reserva.responsavel?.username?.toLowerCase() || '';
+        const busca = filtroResponsavel.toLowerCase();
+        if (!responsavelNome.includes(busca) && !responsavelUsername.includes(busca)) {
+          return false;
+        }
+      }
+      
+      // Filtro por local
+      if (filtroLocal && !salaInfo.local.toLowerCase().includes(filtroLocal.toLowerCase())) {
+        return false;
+      }
+      
+      return true;
+    });
+  }, [reservas, filtroSala, filtroData, filtroResponsavel, filtroLocal, salasMap]);
+
   const handleEdit = (id: string) => {
     navigate(`/reservas/${id}/editar`);
   };
@@ -102,10 +120,13 @@ export const ReservasList = () => {
     if (reservaToDelete) {
       const result = await handleDelete(reservaToDelete);
       if (result.success) {
+        showToast({ message: 'Reserva excluída com sucesso!', variant: 'success' });
         setDeleteModalOpen(false);
         setReservaToDelete(null);
         // Recarrega a lista após deletar
         await refetch();
+      } else {
+        showToast({ message: result.error || 'Erro ao excluir reserva', variant: 'destructive' });
       }
     }
   };
@@ -117,11 +138,6 @@ export const ReservasList = () => {
         <div className="text-center">Carregando reservas...</div>
       </div>
     );
-  }
-  
-  // Avisa se a query de usuários falhou, mas continua mostrando as reservas
-  if (errorUsuarios) {
-    console.warn('Não foi possível carregar usuários. Os nomes dos responsáveis podem não aparecer.');
   }
 
   if (error) {
@@ -142,9 +158,75 @@ export const ReservasList = () => {
           </Button>
         </CardHeader>
         <CardContent>
-          {reservas.length === 0 ? (
+          {/* Filtros */}
+          <div className="mb-6 space-y-4 p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filtrar por Sala</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={filtroSala}
+                  onChange={(e) => setFiltroSala(e.target.value === '' ? '' : parseInt(e.target.value))}
+                >
+                  <option value="">Todas as salas</option>
+                  {salas.map((sala: Sala) => (
+                    <option key={sala.id} value={sala.id}>
+                      {sala.nome} - {sala.local}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filtrar por Data</label>
+                <Input
+                  type="date"
+                  value={filtroData}
+                  onChange={(e) => setFiltroData(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filtrar por Responsável</label>
+                <Input
+                  placeholder="Nome ou username..."
+                  value={filtroResponsavel}
+                  onChange={(e) => setFiltroResponsavel(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filtrar por Local</label>
+                <Input
+                  placeholder="Buscar por local..."
+                  value={filtroLocal}
+                  onChange={(e) => setFiltroLocal(e.target.value)}
+                />
+              </div>
+            </div>
+            {(filtroSala !== '' || filtroData || filtroResponsavel || filtroLocal) && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFiltroSala('');
+                    setFiltroData('');
+                    setFiltroResponsavel('');
+                    setFiltroLocal('');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {reservasFiltradas.length} de {reservas.length} reserva(s)
+                </span>
+              </div>
+            )}
+          </div>
+
+          {reservasFiltradas.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nenhuma reserva encontrada. Clique em "Nova Reserva" para criar uma.
+              {reservas.length === 0
+                ? 'Nenhuma reserva encontrada. Clique em "Nova Reserva" para criar uma.'
+                : 'Nenhuma reserva encontrada com os filtros aplicados.'}
             </div>
           ) : (
             <Table>
@@ -160,7 +242,7 @@ export const ReservasList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reservas.map((reserva: any) => {
+                {reservasFiltradas.map((reserva: any) => {
                   const salaInfo = getSalaInfo(reserva);
                   return (
                     <TableRow key={reserva.id}>
@@ -177,15 +259,9 @@ export const ReservasList = () => {
                         })}
                       </TableCell>
                       <TableCell>
-                        {(() => {
-                          const responsavel = usuariosMap.get(reserva.responsavelId);
-                          if (responsavel) {
-                            // Prioriza nome, depois username
-                            return responsavel.nome || responsavel.username || `ID: ${reserva.responsavelId}`;
-                          }
-                          // Se não encontrou no mapa, mostra apenas o ID
-                          return `ID: ${reserva.responsavelId}`;
-                        })()}
+                        {reserva.responsavel
+                          ? reserva.responsavel.nome || reserva.responsavel.username
+                          : `ID: ${reserva.responsavelId}`}
                       </TableCell>
                       <TableCell>
                         {reserva.cafeQuantidade && reserva.cafeDescricao
@@ -195,22 +271,24 @@ export const ReservasList = () => {
                           : '-'}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(reserva.id.toString())}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteClick(reserva.id.toString())}
-                          >
-                            Excluir
-                          </Button>
-                        </div>
+                        {user && reserva.responsavelId === user.id && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(reserva.id.toString())}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteClick(reserva.id.toString())}
+                            >
+                              Excluir
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   );
@@ -226,6 +304,7 @@ export const ReservasList = () => {
         onOpenChange={setDeleteModalOpen}
         onConfirm={confirmDelete}
       />
+      <ToastContainer />
     </div>
   );
 };

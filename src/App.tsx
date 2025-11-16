@@ -2,13 +2,16 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { ApolloProvider } from '@apollo/client';
 import { apolloClient } from '@/lib/apollo-client';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { AdminRoute } from '@/components/AdminRoute';
 import { Layout } from '@/components/Layout';
 import { Login } from '@/views/Login';
 import { Register } from '@/views/Register';
 import { ReservasList } from '@/views/ReservasList';
 import { ReservaForm } from '@/views/ReservaForm';
 import { SalasList } from '@/views/SalasList';
+import { UsuariosList } from '@/views/UsuariosList';
 import { useAuthStore } from '@/store/auth-store';
+import { ToastProvider } from '@/contexts/ToastContext';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuthStore();
@@ -55,6 +58,16 @@ function AppRoutes() {
       >
         <Route index element={<SalasList />} />
       </Route>
+      <Route
+        path="/usuarios"
+        element={
+          <AdminRoute>
+            <Layout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<UsuariosList />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -63,9 +76,11 @@ function AppRoutes() {
 function App() {
   return (
     <ApolloProvider client={apolloClient}>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </ToastProvider>
     </ApolloProvider>
   );
 }

@@ -20,6 +20,8 @@ export const GET_USUARIOS = gql`
       nome
       username
       email
+      admin
+      createdAt
     }
   }
 `;

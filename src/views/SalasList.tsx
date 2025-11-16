@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useMeuPerfil } from '@/controllers/useMeuPerfil';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -26,15 +27,17 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/toast';
 
 export const SalasList = () => {
+  const { showToast, ToastContainer } = useToast();
   const { salas, loading, error, refetch } = useSalas(0, 100, false);
   const { reservas, loading: loadingReservas } = useReservas(0, 100);
-  const { handleCreate, loading: creating } = useCreateSala();
-  const { handleUpdate, loading: updating } = useUpdateSala();
+  const { handleCreate } = useCreateSala();
+  const { handleUpdate } = useUpdateSala();
   const { handleDelete, loading: deleting } = useDeleteSala();
   const { user, isAdmin } = useAuthStore();
-  const { perfil, loading: loadingPerfil, refetch: refetchPerfil } = useMeuPerfil();
+  const { perfil, loading: loadingPerfil } = useMeuPerfil();
   
   // Atualiza o usuário no store quando o perfil é carregado
   useEffect(() => {
@@ -55,6 +58,11 @@ export const SalasList = () => {
   const [salaToDelete, setSalaToDelete] = useState<number | null>(null);
   const [horariosModalOpen, setHorariosModalOpen] = useState(false);
   const [salaParaHorarios, setSalaParaHorarios] = useState<Sala | null>(null);
+  
+  // Filtros
+  const [filtroNome, setFiltroNome] = useState('');
+  const [filtroLocal, setFiltroLocal] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<'todas' | 'ativa' | 'inativa'>('todas');
 
   // Agrupa reservas por salaId
   const reservasPorSala = useMemo(() => {
@@ -69,6 +77,28 @@ export const SalasList = () => {
     });
     return map;
   }, [reservas]);
+
+  // Filtra salas
+  const salasFiltradas = useMemo(() => {
+    return salas.filter((sala: Sala) => {
+      // Filtro por nome
+      if (filtroNome && !sala.nome.toLowerCase().includes(filtroNome.toLowerCase())) {
+        return false;
+      }
+      // Filtro por local
+      if (filtroLocal && !sala.local.toLowerCase().includes(filtroLocal.toLowerCase())) {
+        return false;
+      }
+      // Filtro por status
+      if (filtroStatus === 'ativa' && !sala.ativa) {
+        return false;
+      }
+      if (filtroStatus === 'inativa' && sala.ativa) {
+        return false;
+      }
+      return true;
+    });
+  }, [salas, filtroNome, filtroLocal, filtroStatus]);
 
   // Função para obter todas as reservas de uma sala (para o modal)
   const getTodasReservas = (salaId: number) => {
@@ -119,10 +149,13 @@ export const SalasList = () => {
     if (salaToDelete) {
       const result = await handleDelete(salaToDelete);
       if (result.success) {
+        showToast({ message: 'Sala excluída com sucesso!', variant: 'success' });
         setDeleteModalOpen(false);
         setSalaToDelete(null);
         // Recarrega a lista após deletar
         await refetch();
+      } else {
+        showToast({ message: result.error || 'Erro ao excluir sala', variant: 'destructive' });
       }
     }
   };
@@ -164,9 +197,63 @@ export const SalasList = () => {
           </div>
         )}
         <CardContent>
-          {salas.length === 0 ? (
+          {/* Filtros */}
+          <div className="mb-6 space-y-4 p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filtrar por Nome</label>
+                <Input
+                  placeholder="Buscar por nome..."
+                  value={filtroNome}
+                  onChange={(e) => setFiltroNome(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Filtrar por Local</label>
+                <Input
+                  placeholder="Buscar por local..."
+                  value={filtroLocal}
+                  onChange={(e) => setFiltroLocal(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <select
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  value={filtroStatus}
+                  onChange={(e) => setFiltroStatus(e.target.value as 'todas' | 'ativa' | 'inativa')}
+                >
+                  <option value="todas">Todas</option>
+                  <option value="ativa">Apenas Ativas</option>
+                  <option value="inativa">Apenas Inativas</option>
+                </select>
+              </div>
+            </div>
+            {(filtroNome || filtroLocal || filtroStatus !== 'todas') && (
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setFiltroNome('');
+                    setFiltroLocal('');
+                    setFiltroStatus('todas');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {salasFiltradas.length} de {salas.length} sala(s)
+                </span>
+              </div>
+            )}
+          </div>
+
+          {salasFiltradas.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              Nenhuma sala encontrada. Clique em "Nova Sala" para criar uma.
+              {salas.length === 0
+                ? 'Nenhuma sala encontrada. Clique em "Nova Sala" para criar uma.'
+                : 'Nenhuma sala encontrada com os filtros aplicados.'}
             </div>
           ) : (
             <Table>
@@ -183,7 +270,7 @@ export const SalasList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {salas.map((sala: Sala) => {
+                {salasFiltradas.map((sala: Sala) => {
                   const totalReservas = reservasPorSala.get(sala.id)?.length || 0;
                   
                   return (
@@ -363,6 +450,7 @@ export const SalasList = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <ToastContainer />
     </div>
   );
 };

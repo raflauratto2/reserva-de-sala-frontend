@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Form, FormItem, FormLabel, FormControl } from '@/components/ui/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/components/ui/toast';
 import { Sala, SalaFormData } from '@/models/Sala';
 
 interface SalaModalProps {
@@ -28,6 +29,7 @@ export const SalaModal = ({
   sala,
   title,
 }: SalaModalProps) => {
+  const { showToast } = useToast();
   const [formData, setFormData] = useState<SalaFormData>({
     nome: '',
     local: '',
@@ -90,12 +92,20 @@ export const SalaModal = ({
     try {
       const result = await onSave(formData);
       if (result.success) {
+        showToast({
+          message: sala ? 'Sala atualizada com sucesso!' : 'Sala criada com sucesso!',
+          variant: 'success',
+        });
         onOpenChange(false);
       } else {
-        setSubmitError(result.error || 'Erro ao salvar sala');
+        const errorMsg = result.error || 'Erro ao salvar sala';
+        setSubmitError(errorMsg);
+        showToast({ message: errorMsg, variant: 'destructive' });
       }
     } catch (err: any) {
-      setSubmitError(err.message || 'Erro ao salvar sala');
+      const errorMsg = err.message || 'Erro ao salvar sala';
+      setSubmitError(errorMsg);
+      showToast({ message: errorMsg, variant: 'destructive' });
     } finally {
       setLoading(false);
     }

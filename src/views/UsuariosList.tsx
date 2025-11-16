@@ -1,0 +1,265 @@
+import { useState } from 'react';
+import { useUsuarios } from '@/controllers/useUsuarios';
+import { useAuth } from '@/controllers/useAuth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Form, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { useToast } from '@/components/ui/toast';
+import { CreateUsuarioInput } from '@/models/User';
+
+export const UsuariosList = () => {
+  const { showToast, ToastContainer } = useToast();
+  const { usuarios, loading, error, refetch } = useUsuarios();
+  const { handleCreateUser } = useAuth();
+  
+  // Estado do formulário
+  const [showForm, setShowForm] = useState(false);
+  const [nome, setNome] = useState('');
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [formError, setFormError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    if (!nome || !username || !email || !password || !confirmPassword) {
+      setFormError('Por favor, preencha todos os campos');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setFormError('As senhas não coincidem');
+      return;
+    }
+
+    if (password.length > 72) {
+      setFormError('A senha não pode ter mais de 72 caracteres');
+      return;
+    }
+
+    try {
+      const input: CreateUsuarioInput = { nome, username, email, password };
+      const result = await handleCreateUser(input);
+      
+      if (result.success) {
+        // Limpar formulário
+        setNome('');
+        setUsername('');
+        setEmail('');
+        setPassword('');
+        setConfirmPassword('');
+        setShowForm(false);
+        
+        showToast({ message: 'Usuário criado com sucesso!', variant: 'success' });
+        await refetch();
+      } else {
+        setFormError(result.error || 'Erro ao criar usuário');
+        showToast({ message: result.error || 'Erro ao criar usuário', variant: 'destructive' });
+      }
+    } catch (err: any) {
+      const errorMsg = err.message || 'Erro ao criar usuário. Verifique os dados informados.';
+      setFormError(errorMsg);
+      showToast({ message: errorMsg, variant: 'destructive' });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-center">Carregando usuários...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="text-red-500">Erro ao carregar usuários: {error.message}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto p-6">
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Gerenciar Usuários</CardTitle>
+          <Button onClick={() => setShowForm(!showForm)}>
+            {showForm ? 'Cancelar' : 'Novo Usuário'}
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {showForm && (
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle>Cadastrar Novo Usuário</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Form onSubmit={handleSubmit}>
+                  {formError && (
+                    <Alert variant="destructive" className="mb-4">
+                      <AlertDescription>{formError}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormItem>
+                      <FormLabel htmlFor="nome">Nome</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="nome"
+                          type="text"
+                          placeholder="Nome completo"
+                          value={nome}
+                          onChange={(e) => setNome(e.target.value)}
+                          required
+                        />
+                      </FormControl>
+                    </FormItem>
+
+                    <FormItem>
+                      <FormLabel htmlFor="username">Username</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="username"
+                          type="text"
+                          placeholder="usuario123"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          required
+                        />
+                      </FormControl>
+                    </FormItem>
+
+                    <FormItem>
+                      <FormLabel htmlFor="email">Email</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="email"
+                          type="email"
+                          placeholder="seu@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          required
+                        />
+                      </FormControl>
+                    </FormItem>
+
+                    <FormItem>
+                      <FormLabel htmlFor="password">Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          required
+                          maxLength={72}
+                        />
+                      </FormControl>
+                    </FormItem>
+
+                    <FormItem className="md:col-span-2">
+                      <FormLabel htmlFor="confirmPassword">Confirmar Senha</FormLabel>
+                      <FormControl>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          placeholder="••••••••"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                          required
+                          maxLength={72}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  </div>
+
+                  <div className="flex gap-2 mt-4">
+                    <Button type="submit">
+                      Criar Usuário
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setShowForm(false);
+                        setFormError('');
+                        setNome('');
+                        setUsername('');
+                        setEmail('');
+                        setPassword('');
+                        setConfirmPassword('');
+                      }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                </Form>
+              </CardContent>
+            </Card>
+          )}
+
+          {usuarios.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              Nenhum usuário encontrado.
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>ID</TableHead>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Username</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Admin</TableHead>
+                  <TableHead>Criado em</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {usuarios.map((usuario) => (
+                  <TableRow key={usuario.id}>
+                    <TableCell>{usuario.id}</TableCell>
+                    <TableCell>{usuario.nome || '-'}</TableCell>
+                    <TableCell>{usuario.username}</TableCell>
+                    <TableCell>{usuario.email}</TableCell>
+                    <TableCell>
+                      {usuario.admin ? (
+                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                          Sim
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Não</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {usuario.createdAt
+                        ? new Date(usuario.createdAt).toLocaleDateString('pt-BR')
+                        : '-'}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+      <ToastContainer />
+    </div>
+  );
+};
+

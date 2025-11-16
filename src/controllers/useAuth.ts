@@ -145,6 +145,30 @@ export const useAuth = () => {
     }
   };
 
+  const handleCreateUser = async (input: CreateUsuarioInput) => {
+    try {
+      const { data, errors } = await criarUsuarioMutation({
+        variables: {
+          usuario: input,
+        },
+      });
+
+      if (errors && errors.length > 0) {
+        throw new Error(errors[0].message);
+      }
+
+      if (!data?.criarUsuario) {
+        throw new Error('Não foi possível criar o usuário. Tente novamente.');
+      }
+
+      return { success: true, data: data.criarUsuario };
+    } catch (err: any) {
+      console.error('Erro ao criar usuário:', err);
+      const errorMessage = err.graphQLErrors?.[0]?.message || err.message || 'Erro ao criar usuário';
+      return { success: false, error: errorMessage };
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -153,6 +177,7 @@ export const useAuth = () => {
   return {
     handleLogin,
     handleRegister,
+    handleCreateUser,
     handleLogout,
     loginLoading,
     registerLoading,

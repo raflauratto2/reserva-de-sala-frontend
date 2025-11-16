@@ -1,3 +1,10 @@
+export interface Responsavel {
+  id: number;
+  nome?: string | null;
+  username: string;
+  email: string;
+}
+
 export interface Reserva {
   id: number;
   local?: string | null;
@@ -6,6 +13,7 @@ export interface Reserva {
   dataHoraInicio: string;
   dataHoraFim: string;
   responsavelId: number;
+  responsavel?: Responsavel | null;
   cafeQuantidade?: number | null;
   cafeDescricao?: string | null;
   createdAt: string;

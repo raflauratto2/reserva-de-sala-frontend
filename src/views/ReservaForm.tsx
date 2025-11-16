@@ -2,15 +2,19 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useCreateReserva, useUpdateReserva, useReserva, useHorariosDisponiveisPorHora } from '@/controllers/useReservas';
 import { useSalas } from '@/controllers/useSalas';
+import { useUsuariosNaoAdmin, useAdicionarParticipante, useRemoverParticipante, useParticipantesReserva } from '@/controllers/useParticipantes';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
+import { useToast } from '@/components/ui/toast';
 import { ReservaFormData } from '@/models/Reserva';
 import { Sala } from '@/models/Sala';
+import { User } from '@/models/User';
 
 export const ReservaForm = () => {
+  const { showToast, ToastContainer } = useToast();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEdit = !!id;
@@ -24,7 +28,16 @@ export const ReservaForm = () => {
   const [horaSelecionada, setHoraSelecionada] = useState<string | null>(null);
   const [cafeQuantidade, setCafeQuantidade] = useState<number | ''>('');
   const [cafeDescricao, setCafeDescricao] = useState('');
+  const [participantesSelecionados, setParticipantesSelecionados] = useState<number[]>([]);
   const [submitError, setSubmitError] = useState('');
+
+  // Busca usuários não-admin para seleção de participantes
+  const { usuarios, loading: loadingUsuarios } = useUsuariosNaoAdmin();
+  const { handleAdd: adicionarParticipante, loading: loadingAddParticipante } = useAdicionarParticipante();
+  const { handleRemove: removerParticipante } = useRemoverParticipante();
+  
+  // Busca participantes existentes ao editar
+  const { participantes: participantesExistentes, refetch: refetchParticipantes } = useParticipantesReserva(isEdit ? parseInt(id || '0') : null);
 
   // Busca horários disponíveis quando sala e data são selecionados
   const { horarios, loading: loadingHorarios, refetch: refetchHorarios } = useHorariosDisponiveisPorHora(
@@ -46,6 +59,14 @@ export const ReservaForm = () => {
       setCafeDescricao(reserva.cafeDescricao || '');
     }
   }, [isEdit, reserva]);
+
+  // Carrega participantes existentes ao editar
+  useEffect(() => {
+    if (isEdit && participantesExistentes.length > 0) {
+      const ids = participantesExistentes.map(p => p.usuarioId);
+      setParticipantesSelecionados(ids);
+    }
+  }, [isEdit, participantesExistentes]);
 
   // Recarrega horários quando sala ou data mudam
   useEffect(() => {
@@ -104,9 +125,42 @@ export const ReservaForm = () => {
       }
 
       if (result.success) {
+        const reservaId = result.data?.id || (isEdit ? parseInt(id!) : null);
+        
+        if (reservaId) {
+          if (isEdit) {
+            // Atualiza participantes ao editar
+            const participantesAtuais = participantesExistentes.map(p => p.usuarioId);
+            const paraAdicionar = participantesSelecionados.filter(id => !participantesAtuais.includes(id));
+            const paraRemover = participantesAtuais.filter(id => !participantesSelecionados.includes(id));
+            
+            // Remove participantes que foram desmarcados
+            for (const usuarioId of paraRemover) {
+              await removerParticipante(reservaId, usuarioId);
+            }
+            
+            // Adiciona novos participantes
+            for (const usuarioId of paraAdicionar) {
+              await adicionarParticipante(reservaId, usuarioId);
+            }
+          } else {
+            // Adiciona participantes após criar a reserva
+            if (participantesSelecionados.length > 0) {
+              for (const usuarioId of participantesSelecionados) {
+                await adicionarParticipante(reservaId, usuarioId);
+              }
+            }
+          }
+        }
+        
+        showToast({
+          message: isEdit ? 'Reserva atualizada com sucesso!' : 'Reserva criada com sucesso!',
+          variant: 'success',
+        });
         navigate('/reservas');
       } else {
         const errorMessage = result.error || 'Erro ao salvar reserva';
+        let displayMessage = errorMessage;
         
         if (result.graphQLErrors && result.graphQLErrors.length > 0) {
           const graphQLError = result.graphQLErrors[0];
@@ -116,16 +170,19 @@ export const ReservaForm = () => {
               message.toLowerCase().includes('conflit') ||
               message.toLowerCase().includes('já existe') ||
               message.toLowerCase().includes('already exists')) {
-            setSubmitError('Conflito de horário: Já existe uma reserva neste período para esta sala.');
+            displayMessage = 'Conflito de horário: Já existe uma reserva neste período para esta sala.';
           } else {
-            setSubmitError(message);
+            displayMessage = message;
           }
-        } else {
-          setSubmitError(errorMessage);
         }
+        
+        setSubmitError(displayMessage);
+        showToast({ message: displayMessage, variant: 'destructive' });
       }
     } catch (err: any) {
-      setSubmitError(err.message || 'Erro ao salvar reserva');
+      const errorMsg = err.message || 'Erro ao salvar reserva';
+      setSubmitError(errorMsg);
+      showToast({ message: errorMsg, variant: 'destructive' });
     }
   };
 
@@ -273,6 +330,56 @@ export const ReservaForm = () => {
               </FormItem>
             )}
 
+            {/* Seleção de Participantes */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-medium mb-4">Participantes (Opcional)</h3>
+              {loadingUsuarios ? (
+                <div className="text-sm text-muted-foreground py-2">Carregando usuários...</div>
+              ) : usuarios.length === 0 ? (
+                <Alert className="mt-2">
+                  <AlertDescription>
+                    Nenhum usuário disponível para convidar.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="space-y-2">
+                  <FormLabel>Selecione os participantes:</FormLabel>
+                  <div className="max-h-48 overflow-y-auto border rounded-md p-2 space-y-2">
+                    {usuarios.map((usuario: User) => (
+                      <label
+                        key={usuario.id}
+                        className="flex items-center space-x-2 p-2 hover:bg-gray-50 rounded cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={participantesSelecionados.includes(usuario.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setParticipantesSelecionados([...participantesSelecionados, usuario.id]);
+                            } else {
+                              setParticipantesSelecionados(
+                                participantesSelecionados.filter(id => id !== usuario.id)
+                              );
+                            }
+                          }}
+                          disabled={loading}
+                          className="rounded border-gray-300"
+                        />
+                        <span className="text-sm">
+                          {usuario.nome || usuario.username} ({usuario.email})
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {participantesSelecionados.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      {participantesSelecionados.length} participante(s) selecionado(s)
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Opções de Café */}
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-medium mb-4">Opções de Café (Opcional)</h3>
@@ -332,6 +439,7 @@ export const ReservaForm = () => {
           </Form>
         </CardContent>
       </Card>
+      <ToastContainer />
     </div>
   );
 };

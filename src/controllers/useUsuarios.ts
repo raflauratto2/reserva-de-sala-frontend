@@ -1,22 +1,16 @@
 import { useQuery } from '@apollo/client';
 import { GET_USUARIOS } from '@/graphql/queries/usuarios';
 import { User } from '@/models/User';
+import { useAuthStore } from '@/store/auth-store';
 
 export const useUsuarios = (skip = 0, limit = 100) => {
+  const { isAuthenticated } = useAuthStore();
   const { data, loading, error, refetch } = useQuery(GET_USUARIOS, {
+    skip: !isAuthenticated, // Só executa quando autenticado
     variables: { skip, limit },
     errorPolicy: 'all', // Continua mesmo se houver erro
-    skip: false, // Sempre tenta executar
+    fetchPolicy: 'cache-and-network', // Busca da rede mesmo se tiver cache
   });
-
-  // Log para debug
-  if (error) {
-    console.warn('Erro ao buscar usuários:', error);
-  }
-
-  if (data) {
-    console.log('Usuários carregados:', data?.usuarios?.length || 0);
-  }
 
   return {
     usuarios: (data?.usuarios || []) as User[],

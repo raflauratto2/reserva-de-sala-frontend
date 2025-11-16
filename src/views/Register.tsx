@@ -5,9 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { useToast } from '@/components/ui/toast';
 import { Link } from 'react-router-dom';
 
 export const Register = () => {
+  const { showToast, ToastContainer } = useToast();
+  const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +22,7 @@ export const Register = () => {
     e.preventDefault();
     setFormError('');
 
-    if (!username || !email || !password || !confirmPassword) {
+    if (!nome || !username || !email || !password || !confirmPassword) {
       setFormError('Por favor, preencha todos os campos');
       return;
     }
@@ -35,9 +38,12 @@ export const Register = () => {
     }
 
     try {
-      await handleRegister({ username, email, password });
+      await handleRegister({ nome, username, email, password });
+      showToast({ message: 'Conta criada com sucesso!', variant: 'success' });
     } catch (err: any) {
-      setFormError(err.message || 'Erro ao criar conta. Verifique os dados informados.');
+      const errorMsg = err.message || 'Erro ao criar conta. Verifique os dados informados.';
+      setFormError(errorMsg);
+      showToast({ message: errorMsg, variant: 'destructive' });
     }
   };
 
@@ -61,6 +67,21 @@ export const Register = () => {
                 <AlertDescription>{formError}</AlertDescription>
               </Alert>
             )}
+
+            <FormItem>
+              <FormLabel htmlFor="nome">Nome</FormLabel>
+              <FormControl>
+                <Input
+                  id="nome"
+                  type="text"
+                  placeholder="Seu nome completo"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  disabled={registerLoading}
+                  required
+                />
+              </FormControl>
+            </FormItem>
 
             <FormItem>
               <FormLabel htmlFor="username">Username</FormLabel>
@@ -137,6 +158,7 @@ export const Register = () => {
           </Form>
         </CardContent>
       </Card>
+      <ToastContainer />
     </div>
   );
 };
