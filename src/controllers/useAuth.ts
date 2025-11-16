@@ -1,14 +1,39 @@
 import { useMutation } from '@apollo/client';
 import { LOGIN, CRIAR_USUARIO } from '@/graphql/mutations/auth';
+import { MEU_PERFIL } from '@/graphql/queries/auth';
 import { useAuthStore } from '@/store/auth-store';
 import { useNavigate } from 'react-router-dom';
 import { LoginInput, CreateUsuarioInput } from '@/models/User';
+import { apolloClient } from '@/lib/apollo-client';
 
 export const useAuth = () => {
   const navigate = useNavigate();
-  const { login, logout, isAuthenticated } = useAuthStore();
+  const { login, logout, setUser, isAuthenticated } = useAuthStore();
   const [loginMutation, { loading: loginLoading, error: loginError }] = useMutation(LOGIN);
   const [criarUsuarioMutation, { loading: registerLoading, error: registerError }] = useMutation(CRIAR_USUARIO);
+
+  // Função auxiliar para buscar perfil do usuário usando Apollo Client
+  const fetchUserProfile = async (token: string) => {
+    try {
+      const { data } = await apolloClient.query({
+        query: MEU_PERFIL,
+        context: {
+          headers: {
+            authorization: `Bearer ${token}`,
+          },
+        },
+        fetchPolicy: 'network-only',
+      });
+
+      if (data?.meuPerfil) {
+        return data.meuPerfil;
+      }
+      return null;
+    } catch (error) {
+      console.error('Erro ao buscar perfil:', error);
+      return null;
+    }
+  };
 
   const handleLogin = async (input: LoginInput) => {
     try {
@@ -19,7 +44,15 @@ export const useAuth = () => {
       });
 
       if (data?.login?.accessToken) {
-        login(data.login.accessToken);
+        const token = data.login.accessToken;
+        login(token);
+        
+        // Busca o perfil do usuário após login
+        const userProfile = await fetchUserProfile(token);
+        if (userProfile) {
+          setUser(userProfile);
+        }
+        
         navigate('/reservas');
       }
     } catch (err: any) {

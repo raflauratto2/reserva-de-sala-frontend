@@ -1,13 +1,23 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useAuthStore } from '@/store/auth-store';
 import { useAuth } from '@/controllers/useAuth';
+import { useMeuPerfil } from '@/controllers/useMeuPerfil';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 export const Layout = () => {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated, setUser } = useAuthStore();
   const { handleLogout } = useAuth();
+  const { perfil, loading: loadingPerfil } = useMeuPerfil();
   const location = useLocation();
+
+  // Carrega o perfil quando o usuário está autenticado mas não tem perfil carregado
+  useEffect(() => {
+    if (isAuthenticated && perfil && (!user || user.id !== perfil.id)) {
+      setUser(perfil);
+    }
+  }, [isAuthenticated, perfil, user, setUser]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,6 +54,11 @@ export const Layout = () => {
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">
                 {user?.username || user?.email}
+                {user?.admin && (
+                  <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
+                    Admin
+                  </span>
+                )}
               </span>
               <Button variant="outline" size="sm" onClick={handleLogout}>
                 Sair

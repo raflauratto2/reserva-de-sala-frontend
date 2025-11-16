@@ -6,23 +6,32 @@ interface AuthState {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
-  login: (token: string) => void;
+  login: (token: string, user?: User) => void;
+  setUser: (user: User) => void;
   logout: () => void;
+  isAdmin: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
-      login: (token: string) => {
+      login: (token: string, user?: User) => {
         localStorage.setItem('auth_token', token);
-        set({ token, isAuthenticated: true });
+        set({ token, isAuthenticated: true, user: user || null });
+      },
+      setUser: (user: User) => {
+        set({ user });
       },
       logout: () => {
         localStorage.removeItem('auth_token');
         set({ user: null, token: null, isAuthenticated: false });
+      },
+      isAdmin: () => {
+        const { user } = get();
+        return user?.admin === true;
       },
     }),
     {
