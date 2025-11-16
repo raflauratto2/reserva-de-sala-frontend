@@ -47,6 +47,17 @@ export const Layout = () => {
               <h1 className="text-xl font-bold">Sistema de Reservas</h1>
               <nav className="flex gap-4">
                 <Link
+                  to="/dashboard"
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary",
+                    location.pathname === '/dashboard'
+                      ? "text-primary"
+                      : "text-muted-foreground"
+                  )}
+                >
+                  Dashboard
+                </Link>
+                <Link
                   to="/reservas"
                   className={cn(
                     "text-sm font-medium transition-colors hover:text-primary",

@@ -64,7 +64,7 @@ export const useAuth = () => {
           // Não bloqueia o login se a busca do perfil falhar
         }
         
-        navigate('/reservas');
+        navigate('/dashboard');
       } else {
         throw new Error('Token de acesso não recebido');
       }
