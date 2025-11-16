@@ -2,6 +2,18 @@
 
 Este é o front-end web para um sistema de reservas de salas de reunião. Foi desenvolvido usando React com TypeScript, seguindo o padrão MVC e utilizando GraphQL para comunicação com a API.
 
+## 🎥 Demonstração
+
+Assista ao vídeo demonstrativo do sistema:
+
+<div align="center">
+  
+  [![Demonstração do Sistema](https://i.vimeocdn.com/video/1137491148-640x360.jpg)](https://vimeo.com/1137491148)
+  
+  **[Assistir no Vimeo](https://vimeo.com/1137491148)**
+  
+</div>
+
 ## Tecnologias Utilizadas
 
 O projeto foi construído com as seguintes tecnologias:
@@ -79,6 +91,165 @@ src/
 ```
 
 ## Como Instalar e Executar
+
+### Opção 1: Executar com Docker (Recomendado)
+
+#### Pré-requisitos
+- Docker instalado ([Download Docker](https://www.docker.com/get-started))
+- Docker Compose instalado (geralmente vem junto com o Docker Desktop)
+
+#### Passos para executar
+
+1. **Clone o repositório:**
+```bash
+git clone <url-do-repositorio>
+cd reserva-de-sala-frontend
+```
+
+2. **Configure as variáveis de ambiente:**
+```bash
+# No Windows PowerShell
+copy env.example .env
+
+# No Linux/Mac
+cp env.example .env
+```
+
+3. **Edite o arquivo `.env` e configure a URL da sua API GraphQL:**
+```env
+VITE_GRAPHQL_API_URL=http://localhost:8000/graphql
+```
+
+**Nota Importante sobre variáveis de ambiente:** 
+- As variáveis de ambiente do Vite são embutidas no build. Se você precisar alterar a URL da API após o build, será necessário reconstruir a imagem.
+- Se sua API estiver rodando em outro host (por exemplo, em outro container Docker), você pode precisar ajustar a URL:
+  - Para acessar outros containers Docker na mesma rede, use o nome do serviço ou `host.docker.internal` no Windows/Mac
+  - Se estiver usando Docker Compose com múltiplos serviços, você pode usar o nome do serviço do backend, por exemplo: `http://backend:8000/graphql`
+
+4. **Build e execute com Docker Compose:**
+```bash
+# Primeira vez (ou quando houver mudanças no código)
+docker-compose up -d --build
+
+# Executar novamente (sem rebuild)
+docker-compose up -d
+```
+
+A aplicação estará disponível em **http://localhost:3000**
+
+#### Comandos úteis do Docker Compose
+
+**Ver o status dos containers:**
+```bash
+docker-compose ps
+```
+
+**Ver os logs em tempo real:**
+```bash
+docker-compose logs -f
+```
+
+**Parar a aplicação:**
+```bash
+docker-compose down
+```
+
+**Parar e remover volumes (limpeza completa):**
+```bash
+docker-compose down -v
+```
+
+**Reiniciar a aplicação:**
+```bash
+docker-compose restart
+```
+
+**Rebuildar após mudanças no código:**
+```bash
+docker-compose up -d --build
+```
+
+#### Executar apenas com Docker (sem docker-compose)
+
+Se preferir usar apenas Docker sem docker-compose:
+
+1. **Construa a imagem com a URL da API:**
+```bash
+docker build --build-arg VITE_GRAPHQL_API_URL=http://localhost:8000/graphql -t reserva-sala-frontend .
+```
+
+Ou, se você tiver um arquivo `.env` configurado, pode usar:
+```bash
+# No Windows PowerShell
+docker build --build-arg VITE_GRAPHQL_API_URL=$env:VITE_GRAPHQL_API_URL -t reserva-sala-frontend .
+
+# No Linux/Mac
+docker build --build-arg VITE_GRAPHQL_API_URL=$VITE_GRAPHQL_API_URL -t reserva-sala-frontend .
+```
+
+2. **Execute o container:**
+```bash
+docker run -d -p 3000:80 --name reserva-sala-frontend reserva-sala-frontend
+```
+
+A aplicação estará disponível em **http://localhost:3000**
+
+3. **Comandos úteis:**
+```bash
+# Ver logs
+docker logs -f reserva-sala-frontend
+
+# Parar o container
+docker stop reserva-sala-frontend
+
+# Iniciar novamente
+docker start reserva-sala-frontend
+
+# Parar e remover o container
+docker stop reserva-sala-frontend
+docker rm reserva-sala-frontend
+
+# Remover a imagem
+docker rmi reserva-sala-frontend
+```
+
+#### Troubleshooting Docker
+
+**Problema: Porta 3000 já está em uso**
+```bash
+# Verifique qual processo está usando a porta
+# No Windows PowerShell
+netstat -ano | findstr :3000
+
+# No Linux/Mac
+lsof -i :3000
+
+# Ou altere a porta no docker-compose.yml (linha 11)
+ports:
+  - "3001:80"  # Altere 3000 para outra porta
+```
+
+**Problema: Erro ao buildar (TypeScript errors)**
+- Certifique-se de que todos os arquivos foram commitados corretamente
+- Verifique se o arquivo `src/vite-env.d.ts` existe
+- Execute `npm run build` localmente para verificar erros antes do Docker
+
+**Problema: Aplicação não conecta com a API**
+- Verifique se a URL no `.env` está correta
+- Se a API estiver em outro container, use o nome do serviço ou `host.docker.internal`
+- Reconstrua a imagem após alterar o `.env`: `docker-compose up -d --build`
+
+**Problema: Mudanças no código não aparecem**
+- Reconstrua a imagem: `docker-compose up -d --build`
+- Limpe o cache do Docker: `docker-compose build --no-cache`
+
+**Verificar se o container está rodando:**
+```bash
+docker-compose ps
+docker-compose logs frontend
+```
+
+### Opção 2: Executar Localmente (Desenvolvimento)
 
 Primeiro, clone o repositório e instale as dependências:
 

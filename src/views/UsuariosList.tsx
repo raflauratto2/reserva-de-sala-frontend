@@ -40,7 +40,7 @@ export const UsuariosList = () => {
   }, [filtroNome, filtroUsername, filtroEmail, filtroAdmin]);
   
   // Carrega mais dados do backend
-  const { usuarios: todosUsuarios, loading, error, refetch, criarUsuarioAdmin, atualizarUsuarioAdmin, deletarUsuario } = useUsuarios(0, 1000);
+  const { usuarios: todosUsuarios, loading, error, criarUsuarioAdmin, atualizarUsuarioAdmin, deletarUsuario } = useUsuarios(0, 1000);
   
   // Filtra usuários
   const usuariosFiltrados = useMemo(() => {

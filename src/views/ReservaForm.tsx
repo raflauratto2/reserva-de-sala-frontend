@@ -35,11 +35,11 @@ export const ReservaForm = () => {
 
   // Busca usuários não-admin para seleção de participantes
   const { usuarios, loading: loadingUsuarios } = useUsuariosNaoAdmin();
-  const { handleAdd: adicionarParticipante, loading: loadingAddParticipante } = useAdicionarParticipante();
+  const { handleAdd: adicionarParticipante } = useAdicionarParticipante();
   const { handleRemove: removerParticipante } = useRemoverParticipante();
   
   // Busca participantes existentes ao editar
-  const { participantes: participantesExistentes, refetch: refetchParticipantes } = useParticipantesReserva(isEdit ? parseInt(id || '0') : null);
+  const { participantes: participantesExistentes } = useParticipantesReserva(isEdit ? parseInt(id || '0') : null);
 
   // Busca horários disponíveis quando sala e data são selecionados
   const { horarios, loading: loadingHorarios, refetch: refetchHorarios } = useHorariosDisponiveisPorHora(
