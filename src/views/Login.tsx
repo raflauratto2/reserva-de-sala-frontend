@@ -5,36 +5,83 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Form, FormItem, FormLabel, FormControl } from '@/components/ui/form';
+import { Link } from 'react-router-dom';
+import { useToast } from '@/components/ui/toast';
 
 export const Login = () => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [formError, setFormError] = useState('');
-  const { handleLogin, loading } = useAuth();
+  const { handleLogin, loginLoading } = useAuth();
+  const { showToast, ToastContainer } = useToast();
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
 
-    if (!email || !password) {
+    if (!username || !password) {
       setFormError('Por favor, preencha todos os campos');
       return;
     }
 
     try {
-      await handleLogin({ email, password });
+      await handleLogin({ username, password });
     } catch (err: any) {
-      setFormError(err.message || 'Erro ao fazer login. Verifique suas credenciais.');
+      console.log('Erro capturado no Login:', err);
+      console.log('Tipo do erro:', typeof err);
+      console.log('Erro completo:', JSON.stringify(err, null, 2));
+      
+      // Extrai a mensagem de erro de diferentes formatos
+      let errorMessage = 'Erro ao fazer login. Verifique suas credenciais.';
+      
+      if (err?.graphQLErrors?.[0]?.message) {
+        errorMessage = err.graphQLErrors[0].message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
+      
+      console.log('Mensagem de erro extraída:', errorMessage);
+      setFormError(errorMessage);
+      
+      // Sempre mostra toast para erros de login
+      const isAuthError = 
+        errorMessage.includes('Username ou senha incorretos') || 
+        errorMessage.includes('credenciais') ||
+        errorMessage.includes('incorretos') ||
+        errorMessage.toLowerCase().includes('username') ||
+        errorMessage.toLowerCase().includes('password') ||
+        errorMessage.toLowerCase().includes('senha incorreta');
+      
+      const toastMessage = isAuthError 
+        ? 'Login falhou. Verifique seu usuário e senha.'
+        : errorMessage;
+      
+      console.log('Exibindo toast com mensagem:', toastMessage);
+      console.log('showToast disponível?', typeof showToast);
+      
+      // Sempre exibe o toast, mesmo que já tenha sido exibido antes
+      showToast({
+        message: toastMessage,
+        variant: 'destructive',
+        duration: 4000,
+      });
+      
+      // Log adicional para debug
+      console.log('Toast chamado, verificando se foi adicionado...');
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema</h1>
-        <h2 className="text-xl text-gray-600">Reserva de Salas de Reunião</h2>
-      </div>
-      <Card className="w-full max-w-md">
+    <>
+      <ToastContainer />
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema</h1>
+          <h2 className="text-xl text-gray-600">Reserva de Salas de Reunião</h2>
+        </div>
+        <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Login</CardTitle>
           <CardDescription>
@@ -50,15 +97,15 @@ export const Login = () => {
             )}
 
             <FormItem>
-              <FormLabel htmlFor="email">Email</FormLabel>
+              <FormLabel htmlFor="username">Usuário</FormLabel>
               <FormControl>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={loading}
+                  id="username"
+                  type="text"
+                  placeholder="usuario123"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  disabled={loginLoading}
                   required
                 />
               </FormControl>
@@ -73,19 +120,27 @@ export const Login = () => {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
+                  disabled={loginLoading}
                   required
                 />
               </FormControl>
             </FormItem>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Entrando...' : 'Entrar'}
+            <Button type="submit" className="w-full" disabled={loginLoading}>
+              {loginLoading ? 'Entrando...' : 'Entrar'}
             </Button>
+
+            <div className="mt-4 text-center text-sm">
+              <span className="text-gray-600">Não tem uma conta? </span>
+              <Link to="/register" className="text-blue-600 hover:underline">
+                Criar conta
+              </Link>
+            </div>
           </Form>
         </CardContent>
       </Card>
     </div>
+    </>
   );
 };
 

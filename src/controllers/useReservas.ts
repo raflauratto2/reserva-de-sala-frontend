@@ -1,11 +1,12 @@
 import { useQuery, useMutation } from '@apollo/client';
 import { GET_RESERVAS, GET_RESERVA } from '@/graphql/queries/reservas';
 import { CREATE_RESERVA, UPDATE_RESERVA, DELETE_RESERVA } from '@/graphql/mutations/reservas';
-import { ReservaInput, ReservaFormData } from '@/models/Reserva';
-import { format } from 'date-fns';
+import { ReservaInput, ReservaUpdateInput, ReservaFormData } from '@/models/Reserva';
 
-export const useReservas = () => {
-  const { data, loading, error, refetch } = useQuery(GET_RESERVAS);
+export const useReservas = (skip = 0, limit = 100) => {
+  const { data, loading, error, refetch } = useQuery(GET_RESERVAS, {
+    variables: { skip, limit },
+  });
 
   return {
     reservas: data?.reservas || [],
@@ -15,10 +16,10 @@ export const useReservas = () => {
   };
 };
 
-export const useReserva = (id: string) => {
+export const useReserva = (reservaId: number) => {
   const { data, loading, error } = useQuery(GET_RESERVA, {
-    variables: { id },
-    skip: !id,
+    variables: { reservaId },
+    skip: !reservaId,
   });
 
   return {
@@ -35,25 +36,20 @@ export const useCreateReserva = () => {
 
   const handleCreate = async (formData: ReservaFormData) => {
     try {
-      const input: ReservaInput = {
+      const reserva: ReservaInput = {
         local: formData.local,
         sala: formData.sala,
-        dataInicio: formData.dataInicio,
-        dataFim: formData.dataFim,
-        responsavel: formData.responsavel,
-        cafe: formData.cafeQuantidade && formData.cafeDescricao
-          ? {
-              quantidade: formData.cafeQuantidade,
-              descricao: formData.cafeDescricao,
-            }
-          : null,
+        dataHoraInicio: formData.dataHoraInicio,
+        dataHoraFim: formData.dataHoraFim,
+        ...(formData.cafeQuantidade && { cafeQuantidade: formData.cafeQuantidade }),
+        ...(formData.cafeDescricao && { cafeDescricao: formData.cafeDescricao }),
       };
 
       const { data } = await createReserva({
-        variables: { input },
+        variables: { reserva },
       });
 
-      return { success: true, data: data?.createReserva };
+      return { success: true, data: data?.criarReserva };
     } catch (err: any) {
       return {
         success: false,
@@ -75,27 +71,22 @@ export const useUpdateReserva = () => {
     refetchQueries: [{ query: GET_RESERVAS }],
   });
 
-  const handleUpdate = async (id: string, formData: ReservaFormData) => {
+  const handleUpdate = async (reservaId: number, formData: Partial<ReservaFormData>) => {
     try {
-      const input: ReservaInput = {
-        local: formData.local,
-        sala: formData.sala,
-        dataInicio: formData.dataInicio,
-        dataFim: formData.dataFim,
-        responsavel: formData.responsavel,
-        cafe: formData.cafeQuantidade && formData.cafeDescricao
-          ? {
-              quantidade: formData.cafeQuantidade,
-              descricao: formData.cafeDescricao,
-            }
-          : null,
-      };
+      const reserva: ReservaUpdateInput = {};
+      
+      if (formData.local) reserva.local = formData.local;
+      if (formData.sala) reserva.sala = formData.sala;
+      if (formData.dataHoraInicio) reserva.dataHoraInicio = formData.dataHoraInicio;
+      if (formData.dataHoraFim) reserva.dataHoraFim = formData.dataHoraFim;
+      if (formData.cafeQuantidade !== undefined) reserva.cafeQuantidade = formData.cafeQuantidade;
+      if (formData.cafeDescricao) reserva.cafeDescricao = formData.cafeDescricao;
 
       const { data } = await updateReserva({
-        variables: { id, input },
+        variables: { reservaId, reserva },
       });
 
-      return { success: true, data: data?.updateReserva };
+      return { success: true, data: data?.atualizarReserva };
     } catch (err: any) {
       return {
         success: false,
@@ -117,13 +108,13 @@ export const useDeleteReserva = () => {
     refetchQueries: [{ query: GET_RESERVAS }],
   });
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (reservaId: number) => {
     try {
-      await deleteReserva({
-        variables: { id },
+      const { data } = await deleteReserva({
+        variables: { reservaId },
       });
 
-      return { success: true };
+      return { success: data?.deletarReserva || false };
     } catch (err: any) {
       return {
         success: false,

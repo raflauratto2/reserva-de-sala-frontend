@@ -1,34 +1,39 @@
 export interface Reserva {
-  id: string;
+  id: number;
   local: string;
   sala: string;
-  dataInicio: string;
-  dataFim: string;
-  responsavel: string;
-  cafe?: {
-    quantidade: number;
-    descricao: string;
-  } | null;
+  dataHoraInicio: string;
+  dataHoraFim: string;
+  responsavelId: number;
+  cafeQuantidade?: number | null;
+  cafeDescricao?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ReservaInput {
   local: string;
   sala: string;
-  dataInicio: string;
-  dataFim: string;
-  responsavel: string;
-  cafe?: {
-    quantidade: number;
-    descricao: string;
-  } | null;
+  dataHoraInicio: string;
+  dataHoraFim: string;
+  cafeQuantidade?: number;
+  cafeDescricao?: string;
+}
+
+export interface ReservaUpdateInput {
+  local?: string;
+  sala?: string;
+  dataHoraInicio?: string;
+  dataHoraFim?: string;
+  cafeQuantidade?: number;
+  cafeDescricao?: string;
 }
 
 export interface ReservaFormData {
   local: string;
   sala: string;
-  dataInicio: string;
-  dataFim: string;
-  responsavel: string;
+  dataHoraInicio: string;
+  dataHoraFim: string;
   cafeQuantidade?: number;
   cafeDescricao?: string;
 }

@@ -1,42 +1,42 @@
 import { gql } from '@apollo/client';
 
 export const CREATE_RESERVA = gql`
-  mutation CreateReserva($input: ReservaInput!) {
-    createReserva(input: $input) {
+  mutation CriarReserva($reserva: ReservaInput!) {
+    criarReserva(reserva: $reserva) {
       id
       local
       sala
-      dataInicio
-      dataFim
-      responsavel
-      cafe {
-        quantidade
-        descricao
-      }
+      dataHoraInicio
+      dataHoraFim
+      responsavelId
+      cafeQuantidade
+      cafeDescricao
+      createdAt
+      updatedAt
     }
   }
 `;
 
 export const UPDATE_RESERVA = gql`
-  mutation UpdateReserva($id: ID!, $input: ReservaInput!) {
-    updateReserva(id: $id, input: $input) {
+  mutation AtualizarReserva($reservaId: Int!, $reserva: ReservaUpdateInput!) {
+    atualizarReserva(reservaId: $reservaId, reserva: $reserva) {
       id
       local
       sala
-      dataInicio
-      dataFim
-      responsavel
-      cafe {
-        quantidade
-        descricao
-      }
+      dataHoraInicio
+      dataHoraFim
+      responsavelId
+      cafeQuantidade
+      cafeDescricao
+      createdAt
+      updatedAt
     }
   }
 `;
 
 export const DELETE_RESERVA = gql`
-  mutation DeleteReserva($id: ID!) {
-    deleteReserva(id: $id)
+  mutation DeletarReserva($reservaId: Int!) {
+    deletarReserva(reservaId: $reservaId)
   }
 `;
 

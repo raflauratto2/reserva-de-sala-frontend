@@ -1,16 +1,23 @@
 export interface User {
-  id: string;
+  id: number;
+  username: string;
   email: string;
-  name: string;
+  createdAt: string;
 }
 
 export interface LoginInput {
+  username: string;
+  password: string;
+}
+
+export interface CreateUsuarioInput {
+  username: string;
   email: string;
   password: string;
 }
 
 export interface AuthResponse {
-  token: string;
-  user: User;
+  accessToken: string;
+  tokenType: string;
 }
 
