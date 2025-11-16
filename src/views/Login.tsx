@@ -81,9 +81,9 @@ export const Login = () => {
           <h2 className="text-xl text-gray-600">Reserva de Salas de Reunião</h2>
         </div>
         <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
+        <CardHeader className="text-center">
+          <CardTitle className="text-center">Login</CardTitle>
+          <CardDescription className="text-center">
             Entre com suas credenciais para acessar o sistema
           </CardDescription>
         </CardHeader>
