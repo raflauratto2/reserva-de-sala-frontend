@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useReservas } from '@/controllers/useReservas';
 import { useSalas } from '@/controllers/useSalas';
+import { useUsuarios } from '@/controllers/useUsuarios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -17,13 +18,32 @@ import { useState, useEffect, useMemo } from 'react';
 import { DeleteReservaModal } from '@/components/DeleteReservaModal';
 import { useDeleteReserva } from '@/controllers/useReservas';
 import { Sala } from '@/models/Sala';
+import { User } from '@/models/User';
 
 export const ReservasList = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { reservas, loading, error, refetch } = useReservas();
   const { salas, loading: loadingSalas } = useSalas(0, 100, false); // Carrega todas as salas
+  const { usuarios, loading: loadingUsuarios, error: errorUsuarios } = useUsuarios(0, 100); // Carrega todos os usuários
   const { handleDelete } = useDeleteReserva();
+  
+  // Log para debug
+  useEffect(() => {
+    if (errorUsuarios) {
+      console.error('Erro ao carregar usuários:', errorUsuarios);
+      console.error('Detalhes do erro:', {
+        message: errorUsuarios.message,
+        graphQLErrors: errorUsuarios.graphQLErrors,
+        networkError: errorUsuarios.networkError,
+      });
+    }
+    if (usuarios.length > 0) {
+      console.log('Usuários carregados com sucesso:', usuarios.length);
+    } else if (!loadingUsuarios && !errorUsuarios) {
+      console.warn('Nenhum usuário carregado, mas não há erro. Verifique se a query "usuarios" existe no backend.');
+    }
+  }, [errorUsuarios, usuarios, loadingUsuarios]);
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [reservaToDelete, setReservaToDelete] = useState<string | null>(null);
 
@@ -42,6 +62,16 @@ export const ReservasList = () => {
     });
     return map;
   }, [salas]);
+
+  // Cria um mapa de usuários por ID para busca rápida
+  const usuariosMap = useMemo(() => {
+    const map = new Map<number, User>();
+    usuarios.forEach((usuario: User) => {
+      map.set(usuario.id, usuario);
+    });
+    console.log('Mapa de usuários criado:', map.size, 'usuários');
+    return map;
+  }, [usuarios]);
 
   // Função auxiliar para obter informações da sala
   const getSalaInfo = (reserva: any) => {
@@ -80,12 +110,18 @@ export const ReservasList = () => {
     }
   };
 
+  // Não bloqueia o carregamento se a query de usuários falhar
   if (loading || loadingSalas) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center">Carregando reservas...</div>
       </div>
     );
+  }
+  
+  // Avisa se a query de usuários falhou, mas continua mostrando as reservas
+  if (errorUsuarios) {
+    console.warn('Não foi possível carregar usuários. Os nomes dos responsáveis podem não aparecer.');
   }
 
   if (error) {
@@ -140,7 +176,17 @@ export const ReservasList = () => {
                           locale: ptBR,
                         })}
                       </TableCell>
-                      <TableCell>ID: {reserva.responsavelId}</TableCell>
+                      <TableCell>
+                        {(() => {
+                          const responsavel = usuariosMap.get(reserva.responsavelId);
+                          if (responsavel) {
+                            // Prioriza nome, depois username
+                            return responsavel.nome || responsavel.username || `ID: ${reserva.responsavelId}`;
+                          }
+                          // Se não encontrou no mapa, mostra apenas o ID
+                          return `ID: ${reserva.responsavelId}`;
+                        })()}
+                      </TableCell>
                       <TableCell>
                         {reserva.cafeQuantidade && reserva.cafeDescricao
                           ? `${reserva.cafeQuantidade} - ${reserva.cafeDescricao}`

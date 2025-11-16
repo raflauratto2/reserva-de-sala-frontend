@@ -57,13 +57,13 @@ export const apolloClient = new ApolloClient({
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
-      errorPolicy: 'none', // Muda para 'none' para que erros sejam lançados como exceções
+      errorPolicy: 'none', // Erros são lançados como exceções
     },
     query: {
       errorPolicy: 'none',
     },
     mutate: {
-      errorPolicy: 'none', // Muda para 'none' para que erros sejam lançados como exceções
+      errorPolicy: 'none', // Erros são lançados como exceções
     },
   },
 });

@@ -1,5 +1,6 @@
 export interface User {
   id: number;
+  nome?: string | null;
   username: string;
   email: string;
   admin: boolean;
@@ -12,6 +13,7 @@ export interface LoginInput {
 }
 
 export interface CreateUsuarioInput {
+  nome?: string;
   username: string;
   email: string;
   password: string;

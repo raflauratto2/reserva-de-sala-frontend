@@ -13,6 +13,7 @@ export const CRIAR_USUARIO = gql`
   mutation CriarUsuario($usuario: UsuarioInput!) {
     criarUsuario(usuario: $usuario) {
       id
+      nome
       username
       email
       createdAt

@@ -37,23 +37,36 @@ export const useAuth = () => {
 
   const handleLogin = async (input: LoginInput) => {
     try {
-      const { data } = await loginMutation({
+      const { data, errors } = await loginMutation({
         variables: {
           loginData: input,
         },
       });
 
+      // Verifica se há erros GraphQL na resposta
+      if (errors && errors.length > 0) {
+        const errorMessage = errors[0].message || 'Erro ao fazer login';
+        throw new Error(errorMessage);
+      }
+
       if (data?.login?.accessToken) {
         const token = data.login.accessToken;
         login(token);
         
-        // Busca o perfil do usuário após login
-        const userProfile = await fetchUserProfile(token);
-        if (userProfile) {
-          setUser(userProfile);
+        // Busca o perfil do usuário após login (não bloqueia o login se falhar)
+        try {
+          const userProfile = await fetchUserProfile(token);
+          if (userProfile) {
+            setUser(userProfile);
+          }
+        } catch (profileError) {
+          console.warn('Não foi possível carregar o perfil do usuário, mas o login foi bem-sucedido:', profileError);
+          // Não bloqueia o login se a busca do perfil falhar
         }
         
         navigate('/reservas');
+      } else {
+        throw new Error('Token de acesso não recebido');
       }
     } catch (err: any) {
       console.error('Erro ao fazer login:', err);
