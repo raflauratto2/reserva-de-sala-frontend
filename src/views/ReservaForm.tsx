@@ -213,17 +213,17 @@ export const ReservaForm = () => {
 
   if (isEdit && loadingReserva) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Carregando reserva...</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-center text-sm sm:text-base">Carregando reserva...</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6 max-w-4xl">
       <Card>
-        <CardHeader>
-          <CardTitle>{isEdit ? 'Editar Reserva' : 'Nova Reserva'}</CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg sm:text-xl">{isEdit ? 'Editar Reserva' : 'Nova Reserva'}</CardTitle>
           <CardDescription>
             {isEdit
               ? 'Atualize as informações da reserva'
@@ -302,7 +302,7 @@ export const ReservaForm = () => {
                     </AlertDescription>
                   </Alert>
                 ) : (
-                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 mt-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 mt-2">
                     {todosHorarios.map((hora) => {
                       const disponivel = horarios.includes(hora);
                       const selecionado = horaSelecionada === hora;
@@ -416,7 +416,7 @@ export const ReservaForm = () => {
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-medium mb-4">Opções de Café (Opcional)</h3>
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <FormItem>
                   <FormLabel htmlFor="cafeQuantidade">Quantidade</FormLabel>
                   <FormControl>
@@ -449,16 +449,17 @@ export const ReservaForm = () => {
               </div>
             </div>
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 mt-6">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate('/reservas')}
                 disabled={loading}
+                className="w-full sm:w-auto"
               >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={loading}>
+              <Button type="submit" disabled={loading} className="w-full sm:w-auto">
                 {loading
                   ? isEdit
                     ? 'Salvando...'

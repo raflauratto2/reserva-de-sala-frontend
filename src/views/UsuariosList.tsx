@@ -188,26 +188,26 @@ export const UsuariosList = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Carregando usuários...</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-center text-sm sm:text-base">Carregando usuários...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-red-500">Erro ao carregar usuários: {error.message}</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-red-500 text-sm sm:text-base">Erro ao carregar usuários: {error.message}</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Gerenciar Usuários</CardTitle>
-          <Button onClick={() => setShowForm(!showForm)}>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 pb-3">
+          <CardTitle className="text-lg sm:text-xl">Gerenciar Usuários</CardTitle>
+          <Button onClick={() => setShowForm(!showForm)} className="w-full sm:w-auto">
             {showForm ? 'Cancelar' : 'Novo Usuário'}
           </Button>
         </CardHeader>
@@ -341,8 +341,8 @@ export const UsuariosList = () => {
           )}
 
           {/* Filtros */}
-          <div className="mb-6 space-y-4 p-4 bg-gray-50 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mb-4 md:mb-6 space-y-3 sm:space-y-4 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Filtrar por Nome</label>
                 <Input
@@ -381,7 +381,7 @@ export const UsuariosList = () => {
               </div>
             </div>
             {(filtroNome || filtroUsername || filtroEmail || filtroAdmin !== 'todos') && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -391,6 +391,7 @@ export const UsuariosList = () => {
                     setFiltroEmail('');
                     setFiltroAdmin('todos');
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Limpar Filtros
                 </Button>
@@ -402,54 +403,59 @@ export const UsuariosList = () => {
           </div>
 
           {todosUsuarios.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm sm:text-base">
               Nenhum usuário encontrado.
             </div>
           ) : usuariosFiltrados.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm sm:text-base">
               Nenhum usuário encontrado com os filtros aplicados.
             </div>
           ) : (
             <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Username</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Admin</TableHead>
-                  <TableHead>Criado em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+              {/* Versão Mobile - Cards */}
+              <div className="block md:hidden space-y-3">
                 {usuarios.map((usuario) => (
-                  <TableRow key={usuario.id}>
-                    <TableCell>{usuario.id}</TableCell>
-                    <TableCell>{usuario.nome || '-'}</TableCell>
-                    <TableCell>{usuario.username}</TableCell>
-                    <TableCell>{usuario.email}</TableCell>
-                    <TableCell>
-                      {usuario.admin ? (
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
-                          Sim
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">Não</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {usuario.createdAt
-                        ? format(new Date(usuario.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
+                  <Card key={usuario.id} className="border-l-4 border-l-blue-500">
+                    <CardContent className="p-4 space-y-3">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-base mb-1">
+                            {usuario.nome || usuario.username}
+                          </h3>
+                          <div className="text-sm text-muted-foreground">
+                            <div>@{usuario.username}</div>
+                            <div>{usuario.email}</div>
+                          </div>
+                        </div>
+                        {usuario.admin && (
+                          <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded whitespace-nowrap">
+                            Admin
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div>
+                          <span className="font-medium">ID: </span>
+                          <span className="text-muted-foreground">{usuario.id}</span>
+                        </div>
+                        
+                        {usuario.createdAt && (
+                          <div>
+                            <span className="font-medium">Criado em: </span>
+                            <span className="text-muted-foreground">
+                              {format(new Date(usuario.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div className="flex gap-2 pt-2">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => handleEdit(usuario)}
+                          className="flex-1"
                         >
                           Editar
                         </Button>
@@ -457,29 +463,90 @@ export const UsuariosList = () => {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleDelete(usuario)}
+                          className="flex-1"
                         >
                           Excluir
                         </Button>
                       </div>
-                    </TableCell>
-                  </TableRow>
+                    </CardContent>
+                  </Card>
                 ))}
-              </TableBody>
-            </Table>
-            
-            {usuariosFiltrados.length > 0 && (
-              <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                itemsPerPage={itemsPerPage}
-                totalItems={totalItems}
-                onItemsPerPageChange={(newItemsPerPage) => {
-                  setItemsPerPage(newItemsPerPage);
-                  setCurrentPage(1);
-                }}
-              />
-            )}
+              </div>
+              
+              {/* Versão Desktop - Tabela */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Username</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Admin</TableHead>
+                      <TableHead>Criado em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {usuarios.map((usuario) => (
+                      <TableRow key={usuario.id}>
+                        <TableCell>{usuario.id}</TableCell>
+                        <TableCell>{usuario.nome || '-'}</TableCell>
+                        <TableCell>{usuario.username}</TableCell>
+                        <TableCell>{usuario.email}</TableCell>
+                        <TableCell>
+                          {usuario.admin ? (
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded">
+                              Sim
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground">Não</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {usuario.createdAt
+                            ? format(new Date(usuario.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                            : '-'}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEdit(usuario)}
+                            >
+                              Editar
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDelete(usuario)}
+                            >
+                              Excluir
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {usuariosFiltrados.length > 0 && (
+                <div className="mt-4">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={totalItems}
+                    onItemsPerPageChange={(newItemsPerPage) => {
+                      setItemsPerPage(newItemsPerPage);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
+              )}
             </>
           )}
         </CardContent>

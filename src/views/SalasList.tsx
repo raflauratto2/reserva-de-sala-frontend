@@ -181,27 +181,27 @@ export const SalasList = () => {
 
   if (loading || loadingReservas || loadingPerfil) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Carregando salas...</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-center text-sm sm:text-base">Carregando salas...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-red-500">Erro ao carregar salas: {error.message}</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-red-500 text-sm sm:text-base">Erro ao carregar salas: {error.message}</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Salas de Reunião</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 pb-3">
+          <CardTitle className="text-lg sm:text-xl">Salas de Reunião</CardTitle>
           {userIsAdmin && (
-            <Button onClick={handleCreateClick}>
+            <Button onClick={handleCreateClick} className="w-full sm:w-auto">
               Nova Sala
             </Button>
           )}
@@ -217,8 +217,8 @@ export const SalasList = () => {
         )}
         <CardContent>
           {/* Filtros */}
-          <div className="mb-6 space-y-4 p-4 bg-gray-50 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mb-4 md:mb-6 space-y-3 sm:space-y-4 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Filtrar por Nome</label>
                 <Input
@@ -249,7 +249,7 @@ export const SalasList = () => {
               </div>
             </div>
             {(filtroNome || filtroLocal || filtroStatus !== 'todas') && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -258,6 +258,7 @@ export const SalasList = () => {
                     setFiltroLocal('');
                     setFiltroStatus('todas');
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Limpar Filtros
                 </Button>
@@ -269,103 +270,213 @@ export const SalasList = () => {
           </div>
 
           {salasFiltradas.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm sm:text-base">
               {salas.length === 0
                 ? 'Nenhuma sala encontrada. Clique em "Nova Sala" para criar uma.'
                 : 'Nenhuma sala encontrada com os filtros aplicados.'}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Local</TableHead>
-                  <TableHead>Capacidade</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Horários Reservados</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Criado em</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Versão Mobile - Cards */}
+              <div className="block md:hidden space-y-3">
                 {salasPaginadas.map((sala: Sala) => {
                   const totalReservas = reservasPorSala.get(sala.id)?.length || 0;
                   
                   return (
-                    <TableRow key={sala.id}>
-                      <TableCell className="font-medium">{sala.nome}</TableCell>
-                      <TableCell>{sala.local}</TableCell>
-                      <TableCell>{sala.capacidade || '-'}</TableCell>
-                      <TableCell>{sala.descricao || '-'}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleVerHorarios(sala)}
-                          disabled={totalReservas === 0}
-                        >
-                          Horários Reservados
-                        </Button>
-                      </TableCell>
-                      <TableCell>
-                        <span
-                          className={`px-2 py-1 rounded text-xs ${
-                            sala.ativa
-                              ? 'bg-green-100 text-green-800'
-                              : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {sala.ativa ? 'Ativa' : 'Inativa'}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(sala.createdAt), "dd/MM/yyyy", {
-                          locale: ptBR,
-                        })}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {userIsAdmin ? (
-                          <div className="flex justify-end gap-2">
+                    <Card key={sala.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base mb-1">
+                              {sala.nome}
+                            </h3>
+                            <div className="text-sm text-muted-foreground">
+                              <div className="font-medium">{sala.local}</div>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
+                              sala.ativa
+                                ? 'bg-green-100 text-green-800'
+                                : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {sala.ativa ? 'Ativa' : 'Inativa'}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          {sala.capacidade && (
+                            <div>
+                              <span className="font-medium">Capacidade: </span>
+                              <span className="text-muted-foreground">
+                                {sala.capacidade} pessoas
+                              </span>
+                            </div>
+                          )}
+                          
+                          {sala.descricao && (
+                            <div>
+                              <span className="font-medium">Descrição: </span>
+                              <span className="text-muted-foreground">
+                                {sala.descricao}
+                              </span>
+                            </div>
+                          )}
+                          
+                          <div>
+                            <span className="font-medium">Reservas: </span>
+                            <span className="text-muted-foreground">
+                              {totalReservas} reserva(s)
+                            </span>
+                          </div>
+                          
+                          <div>
+                            <span className="font-medium">Criado em: </span>
+                            <span className="text-muted-foreground">
+                              {format(new Date(sala.createdAt), "dd/MM/yyyy", {
+                                locale: ptBR,
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleVerHorarios(sala)}
+                            disabled={totalReservas === 0}
+                            className="w-full"
+                          >
+                            Ver Horários ({totalReservas})
+                          </Button>
+                          
+                          {userIsAdmin && (
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditClick(sala)}
+                                className="flex-1"
+                              >
+                                Editar
+                              </Button>
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleDeleteClick(sala.id)}
+                                disabled={deleting}
+                                className="flex-1"
+                              >
+                                Excluir
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Versão Desktop - Tabela */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Nome</TableHead>
+                      <TableHead>Local</TableHead>
+                      <TableHead>Capacidade</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Horários Reservados</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Criado em</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {salasPaginadas.map((sala: Sala) => {
+                      const totalReservas = reservasPorSala.get(sala.id)?.length || 0;
+                      
+                      return (
+                        <TableRow key={sala.id}>
+                          <TableCell className="font-medium">{sala.nome}</TableCell>
+                          <TableCell>{sala.local}</TableCell>
+                          <TableCell>{sala.capacidade || '-'}</TableCell>
+                          <TableCell>{sala.descricao || '-'}</TableCell>
+                          <TableCell>
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleEditClick(sala)}
+                              onClick={() => handleVerHorarios(sala)}
+                              disabled={totalReservas === 0}
                             >
-                              Editar
+                              Horários Reservados
                             </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteClick(sala.id)}
-                              disabled={deleting}
+                          </TableCell>
+                          <TableCell>
+                            <span
+                              className={`px-2 py-1 rounded text-xs ${
+                                sala.ativa
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-red-100 text-red-800'
+                              }`}
                             >
-                              Excluir
-                            </Button>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">-</span>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+                              {sala.ativa ? 'Ativa' : 'Inativa'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(sala.createdAt), "dd/MM/yyyy", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {userIsAdmin ? (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditClick(sala)}
+                                >
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(sala.id)}
+                                  disabled={deleting}
+                                >
+                                  Excluir
+                                </Button>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">-</span>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           
           {salasFiltradas.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onItemsPerPageChange={(newItemsPerPage) => {
-                setItemsPerPage(newItemsPerPage);
-                setCurrentPage(1);
-              }}
-            />
+            <div className="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onItemsPerPageChange={(newItemsPerPage) => {
+                  setItemsPerPage(newItemsPerPage);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           )}
         </CardContent>
       </Card>

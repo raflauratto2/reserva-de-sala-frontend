@@ -153,33 +153,33 @@ export const ReservasList = () => {
   // Não bloqueia o carregamento se a query de usuários falhar
   if (loading || loadingSalas) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Carregando reservas...</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-center text-sm sm:text-base">Carregando reservas...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-red-500">Erro ao carregar reservas: {error.message}</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-red-500 text-sm sm:text-base">Erro ao carregar reservas: {error.message}</div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-3 sm:p-4 md:p-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Reservas de Salas</CardTitle>
-          <Button onClick={() => navigate('/reservas/nova')}>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0 pb-3">
+          <CardTitle className="text-lg sm:text-xl">Reservas de Salas</CardTitle>
+          <Button onClick={() => navigate('/reservas/nova')} className="w-full sm:w-auto">
             Nova Reserva
           </Button>
         </CardHeader>
         <CardContent>
           {/* Filtros */}
-          <div className="mb-6 space-y-4 p-4 bg-gray-50 rounded-lg border">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="mb-4 md:mb-6 space-y-3 sm:space-y-4 p-3 sm:p-4 bg-gray-50 rounded-lg border">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Filtrar por Sala</label>
                 <select
@@ -221,7 +221,7 @@ export const ReservasList = () => {
               </div>
             </div>
             {(filtroSala !== '' || filtroData || filtroResponsavel || filtroLocal) && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -231,6 +231,7 @@ export const ReservasList = () => {
                     setFiltroResponsavel('');
                     setFiltroLocal('');
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Limpar Filtros
                 </Button>
@@ -242,74 +243,91 @@ export const ReservasList = () => {
           </div>
 
           {reservasFiltradas.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm sm:text-base">
               {reservas.length === 0
                 ? 'Nenhuma reserva encontrada. Clique em "Nova Reserva" para criar uma.'
                 : 'Nenhuma reserva encontrada com os filtros aplicados.'}
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Local</TableHead>
-                  <TableHead>Sala</TableHead>
-                  <TableHead>Início</TableHead>
-                  <TableHead>Fim</TableHead>
-                  <TableHead>Responsável</TableHead>
-                  <TableHead>Café</TableHead>
-                  <TableHead>Link Meet</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Versão Mobile - Cards */}
+              <div className="block md:hidden space-y-3">
                 {reservasPaginadas.map((reserva: any) => {
                   const salaInfo = getSalaInfo(reserva);
                   return (
-                    <TableRow key={reserva.id}>
-                      <TableCell>{salaInfo.local}</TableCell>
-                      <TableCell>{salaInfo.nome}</TableCell>
-                      <TableCell>
-                        {format(new Date(reserva.dataHoraInicio), "dd/MM/yyyy HH:mm", {
-                          locale: ptBR,
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {format(new Date(reserva.dataHoraFim), "dd/MM/yyyy HH:mm", {
-                          locale: ptBR,
-                        })}
-                      </TableCell>
-                      <TableCell>
-                        {reserva.responsavel
-                          ? reserva.responsavel.nome || reserva.responsavel.username
-                          : `ID: ${reserva.responsavelId}`}
-                      </TableCell>
-                      <TableCell>
-                        {reserva.cafeQuantidade && reserva.cafeDescricao
-                          ? `${reserva.cafeQuantidade} - ${reserva.cafeDescricao}`
-                          : reserva.cafeQuantidade
-                          ? `${reserva.cafeQuantidade}`
-                          : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {reserva.linkMeet ? (
-                          <a
-                            href={reserva.linkMeet}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline text-sm"
-                          >
-                            Acessar
-                          </a>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">
+                    <Card key={reserva.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base mb-1">
+                              {salaInfo.nome}
+                            </h3>
+                            <div className="text-sm text-muted-foreground">
+                              <div className="font-medium">{salaInfo.local}</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">Início: </span>
+                            <span className="text-muted-foreground">
+                              {format(new Date(reserva.dataHoraInicio), "dd/MM/yyyy HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Fim: </span>
+                            <span className="text-muted-foreground">
+                              {format(new Date(reserva.dataHoraFim), "dd/MM/yyyy HH:mm", {
+                                locale: ptBR,
+                              })}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="font-medium">Responsável: </span>
+                            <span className="text-muted-foreground">
+                              {reserva.responsavel
+                                ? reserva.responsavel.nome || reserva.responsavel.username
+                                : `ID: ${reserva.responsavelId}`}
+                            </span>
+                          </div>
+                          
+                          {reserva.cafeQuantidade && (
+                            <div>
+                              <span className="font-medium">Café: </span>
+                              <span className="text-muted-foreground">
+                                {reserva.cafeQuantidade && reserva.cafeDescricao
+                                  ? `${reserva.cafeQuantidade} - ${reserva.cafeDescricao}`
+                                  : reserva.cafeQuantidade
+                                  ? `${reserva.cafeQuantidade}`
+                                  : '-'}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {reserva.linkMeet && (
+                            <div>
+                              <span className="font-medium">Link Meet: </span>
+                              <a
+                                href={reserva.linkMeet}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline break-all"
+                              >
+                                Acessar
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                        
                         {user && reserva.responsavelId === user.id && (
-                          <div className="flex justify-end gap-2">
+                          <div className="flex flex-col sm:flex-row gap-2 pt-2">
                             <Button
                               variant="outline"
                               size="sm"
+                              className="w-full sm:flex-1"
                               onClick={() => handleEdit(reserva.id.toString())}
                             >
                               Editar
@@ -317,32 +335,120 @@ export const ReservasList = () => {
                             <Button
                               variant="destructive"
                               size="sm"
+                              className="w-full sm:flex-1"
                               onClick={() => handleDeleteClick(reserva.id.toString())}
                             >
                               Excluir
                             </Button>
                           </div>
                         )}
-                      </TableCell>
-                    </TableRow>
+                      </CardContent>
+                    </Card>
                   );
                 })}
-              </TableBody>
-            </Table>
+              </div>
+              
+              {/* Versão Desktop - Tabela */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Local</TableHead>
+                      <TableHead>Sala</TableHead>
+                      <TableHead>Início</TableHead>
+                      <TableHead>Fim</TableHead>
+                      <TableHead>Responsável</TableHead>
+                      <TableHead>Café</TableHead>
+                      <TableHead>Link Meet</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reservasPaginadas.map((reserva: any) => {
+                      const salaInfo = getSalaInfo(reserva);
+                      return (
+                        <TableRow key={reserva.id}>
+                          <TableCell>{salaInfo.local}</TableCell>
+                          <TableCell>{salaInfo.nome}</TableCell>
+                          <TableCell>
+                            {format(new Date(reserva.dataHoraInicio), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            {format(new Date(reserva.dataHoraFim), "dd/MM/yyyy HH:mm", {
+                              locale: ptBR,
+                            })}
+                          </TableCell>
+                          <TableCell>
+                            {reserva.responsavel
+                              ? reserva.responsavel.nome || reserva.responsavel.username
+                              : `ID: ${reserva.responsavelId}`}
+                          </TableCell>
+                          <TableCell>
+                            {reserva.cafeQuantidade && reserva.cafeDescricao
+                              ? `${reserva.cafeQuantidade} - ${reserva.cafeDescricao}`
+                              : reserva.cafeQuantidade
+                              ? `${reserva.cafeQuantidade}`
+                              : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {reserva.linkMeet ? (
+                              <a
+                                href={reserva.linkMeet}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline text-sm"
+                              >
+                                Acessar
+                              </a>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {user && reserva.responsavelId === user.id && (
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEdit(reserva.id.toString())}
+                                >
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => handleDeleteClick(reserva.id.toString())}
+                                >
+                                  Excluir
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            </>
           )}
           
           {reservasFiltradas.length > 0 && (
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-              itemsPerPage={itemsPerPage}
-              totalItems={totalItems}
-              onItemsPerPageChange={(newItemsPerPage) => {
-                setItemsPerPage(newItemsPerPage);
-                setCurrentPage(1);
-              }}
-            />
+            <div className="mt-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onItemsPerPageChange={(newItemsPerPage) => {
+                  setItemsPerPage(newItemsPerPage);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
           )}
         </CardContent>
       </Card>

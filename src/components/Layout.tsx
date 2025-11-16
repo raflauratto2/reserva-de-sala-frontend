@@ -41,80 +41,89 @@ export const Layout = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b">
-        <div className="container mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-6">
-              <h1 className="text-xl font-bold">Sistema de Reservas</h1>
-              <nav className="flex gap-4">
-                <Link
-                  to="/dashboard"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    location.pathname === '/dashboard'
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/reservas"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    location.pathname.startsWith('/reservas')
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  Reservas
-                </Link>
-                <Link
-                  to="/salas"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    location.pathname.startsWith('/salas')
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  Salas
-                </Link>
-                <Link
-                  to="/historico"
-                  className={cn(
-                    "text-sm font-medium transition-colors hover:text-primary",
-                    location.pathname.startsWith('/historico')
-                      ? "text-primary"
-                      : "text-muted-foreground"
-                  )}
-                >
-                  Histórico
-                </Link>
-                {user?.admin && (
-                  <Link
-                    to="/usuarios"
-                    className={cn(
-                      "text-sm font-medium transition-colors hover:text-primary",
-                      location.pathname.startsWith('/usuarios')
-                        ? "text-primary"
-                        : "text-muted-foreground"
-                    )}
-                  >
-                    Usuários
-                  </Link>
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+          {/* Título - sempre no topo em mobile */}
+          <div className="mb-3 md:mb-0">
+            <h1 className="text-lg sm:text-xl font-bold">Sistema de Reservas</h1>
+          </div>
+          
+          {/* Conteúdo do header - organizado em coluna no mobile, linha no desktop */}
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-0">
+            {/* Navegação */}
+            <nav className="flex flex-wrap gap-2 sm:gap-4">
+              <Link
+                to="/dashboard"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary px-2 py-1 rounded",
+                  location.pathname === '/dashboard'
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground"
                 )}
-              </nav>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">
-                  {user?.username || user?.email}
-                  {user?.admin && (
-                    <span className="ml-2 px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded">
-                      Admin
-                    </span>
+              >
+                Dashboard
+              </Link>
+              <Link
+                to="/reservas"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary px-2 py-1 rounded",
+                  location.pathname.startsWith('/reservas')
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground"
+                )}
+              >
+                Reservas
+              </Link>
+              <Link
+                to="/salas"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary px-2 py-1 rounded",
+                  location.pathname.startsWith('/salas')
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground"
+                )}
+              >
+                Salas
+              </Link>
+              <Link
+                to="/historico"
+                className={cn(
+                  "text-sm font-medium transition-colors hover:text-primary px-2 py-1 rounded",
+                  location.pathname.startsWith('/historico')
+                    ? "text-primary bg-primary/10"
+                    : "text-muted-foreground"
+                )}
+              >
+                Histórico
+              </Link>
+              {user?.admin && (
+                <Link
+                  to="/usuarios"
+                  className={cn(
+                    "text-sm font-medium transition-colors hover:text-primary px-2 py-1 rounded",
+                    location.pathname.startsWith('/usuarios')
+                      ? "text-primary bg-primary/10"
+                      : "text-muted-foreground"
                   )}
+                >
+                  Usuários
+                </Link>
+              )}
+            </nav>
+            
+            {/* Controles do usuário */}
+            <div className="flex items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs sm:text-sm text-muted-foreground hidden sm:inline">
+                  {user?.username || user?.email}
                 </span>
+                <span className="text-xs sm:text-sm text-muted-foreground sm:hidden truncate max-w-[100px]">
+                  {user?.username || user?.email}
+                </span>
+                {user?.admin && (
+                  <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-xs rounded whitespace-nowrap">
+                    Admin
+                  </span>
+                )}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -165,7 +174,7 @@ export const Layout = () => {
                   )}
                 </Button>
               </div>
-              <Button variant="outline" size="sm" onClick={handleLogout}>
+              <Button variant="outline" size="sm" onClick={handleLogout} className="text-xs sm:text-sm">
                 Sair
               </Button>
             </div>

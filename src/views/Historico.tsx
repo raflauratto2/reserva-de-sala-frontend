@@ -98,31 +98,31 @@ export const Historico = () => {
   
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
-        <div className="text-center">Carregando histórico...</div>
+      <div className="container mx-auto p-3 sm:p-4 md:p-6">
+        <div className="text-center text-sm sm:text-base">Carregando histórico...</div>
       </div>
     );
   }
   
   return (
-    <div className="container mx-auto p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Histórico de Reuniões</h1>
+    <div className="container mx-auto p-3 sm:p-4 md:p-6">
+      <div className="flex justify-between items-center mb-4 md:mb-6">
+        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold">Histórico de Reuniões</h1>
       </div>
       
       {/* Filtros */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
+      <Card className="mb-4 md:mb-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">Filtros</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             <div>
-              <label className="block text-sm font-medium mb-2">Sala</label>
+              <label className="block text-sm font-medium mb-1.5 sm:mb-2">Sala</label>
               <select
                 value={filtroSala}
                 onChange={(e) => setFiltroSala(e.target.value ? Number(e.target.value) : '')}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 text-sm sm:text-base border rounded-md"
               >
                 <option value="">Todas as salas</option>
                 {salas.map((sala: any) => (
@@ -134,20 +134,21 @@ export const Historico = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">Data</label>
+              <label className="block text-sm font-medium mb-1.5 sm:mb-2">Data</label>
               <Input
                 type="date"
                 value={filtroData}
                 onChange={(e) => setFiltroData(e.target.value)}
+                className="text-sm sm:text-base"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">Tipo</label>
+              <label className="block text-sm font-medium mb-1.5 sm:mb-2">Tipo</label>
               <select
                 value={filtroTipo}
                 onChange={(e) => setFiltroTipo(e.target.value as 'todos' | 'passadas' | 'futuras')}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 text-sm sm:text-base border rounded-md"
               >
                 <option value="todos">Todas</option>
                 <option value="passadas">Passadas</option>
@@ -156,11 +157,11 @@ export const Historico = () => {
             </div>
             
             <div>
-              <label className="block text-sm font-medium mb-2">Papel</label>
+              <label className="block text-sm font-medium mb-1.5 sm:mb-2">Papel</label>
               <select
                 value={filtroPapel}
                 onChange={(e) => setFiltroPapel(e.target.value as 'todos' | 'responsavel' | 'participante')}
-                className="w-full px-3 py-2 border rounded-md"
+                className="w-full px-3 py-2 text-sm sm:text-base border rounded-md"
               >
                 <option value="todos">Todos</option>
                 <option value="responsavel">Responsável</option>
@@ -171,21 +172,110 @@ export const Historico = () => {
         </CardContent>
       </Card>
       
-      {/* Tabela de Reservas */}
+      {/* Tabela de Reservas - Desktop */}
       <Card>
-        <CardHeader>
-          <CardTitle>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base sm:text-lg">
             Reuniões ({reservasFiltradas.length})
           </CardTitle>
         </CardHeader>
         <CardContent>
           {reservasFiltradas.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground text-sm sm:text-base">
               Nenhuma reunião encontrada
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Versão Mobile - Cards */}
+              <div className="block md:hidden space-y-3">
+                {reservasPaginadas.map((item) => {
+                  const reserva = item.reserva;
+                  const dataInicio = parseISO(reserva.dataHoraInicio);
+                  const dataFim = parseISO(reserva.dataHoraFim);
+                  const hoje = startOfToday();
+                  const isPassada = isBefore(dataInicio, hoje);
+                  
+                  return (
+                    <Card key={reserva.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base mb-1">
+                              {getNomeSala(reserva)}
+                            </h3>
+                            <div className="text-sm text-muted-foreground">
+                              <div className="font-medium">
+                                {format(dataInicio, "dd/MM/yyyy", { locale: ptBR })}
+                              </div>
+                              <div>
+                                {format(dataInicio, "HH:mm", { locale: ptBR })} - {format(dataFim, "HH:mm", { locale: ptBR })}
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
+                              item.souResponsavel
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {item.souResponsavel ? 'Responsável' : 'Participante'}
+                          </span>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          <div>
+                            <span className="font-medium">Responsável: </span>
+                            <span className="text-muted-foreground">
+                              {reserva.responsavel?.nome || reserva.responsavel?.username || 'N/A'}
+                            </span>
+                          </div>
+                          
+                          {reserva.cafeQuantidade && (
+                            <div>
+                              <span className="font-medium">Café: </span>
+                              <span className="text-muted-foreground">
+                                {reserva.cafeQuantidade} un.
+                                {reserva.cafeDescricao && ` - ${reserva.cafeDescricao}`}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {reserva.linkMeet && (
+                            <div>
+                              <span className="font-medium">Link Meet: </span>
+                              <a
+                                href={reserva.linkMeet}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline break-all"
+                              >
+                                Acessar
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {!isPassada && item.souResponsavel && (
+                          <div className="pt-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-full"
+                              onClick={() => navigate(`/reservas/${reserva.id}/editar`)}
+                            >
+                              Editar
+                            </Button>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Versão Desktop - Tabela */}
+              <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -280,17 +370,19 @@ export const Historico = () => {
               </div>
               
               {reservasFiltradas.length > 0 && (
-                <Pagination
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
-                  itemsPerPage={itemsPerPage}
-                  totalItems={totalItems}
-                  onItemsPerPageChange={(newItemsPerPage) => {
-                    setItemsPerPage(newItemsPerPage);
-                    setCurrentPage(1);
-                  }}
-                />
+                <div className="mt-4">
+                  <Pagination
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                    itemsPerPage={itemsPerPage}
+                    totalItems={totalItems}
+                    onItemsPerPageChange={(newItemsPerPage) => {
+                      setItemsPerPage(newItemsPerPage);
+                      setCurrentPage(1);
+                    }}
+                  />
+                </div>
               )}
             </>
           )}

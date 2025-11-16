@@ -48,10 +48,10 @@ export const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Sistema</h1>
-        <h2 className="text-xl text-gray-600">Reserva de Salas de Reunião</h2>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 px-4 py-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Sistema</h1>
+        <h2 className="text-lg sm:text-xl text-gray-600">Reserva de Salas de Reunião</h2>
       </div>
       <Card className="w-full max-w-md">
         <CardHeader>
