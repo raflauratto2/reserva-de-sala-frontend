@@ -23,8 +23,9 @@ export interface ReservaConvidada {
   createdAt: string;
 }
 
-export const useUsuariosNaoAdmin = () => {
+export const useUsuariosNaoAdmin = (skip = 0, limit = 100) => {
   const { data, loading, error, refetch } = useQuery(GET_USUARIOS_NAO_ADMIN, {
+    variables: { skip, limit },
     errorPolicy: 'all',
   });
 
@@ -51,11 +52,11 @@ export const useParticipantesReserva = (reservaId: number | null) => {
   };
 };
 
-export const useMinhasReservasConvidadas = (apenasNaoNotificadas = false, apenasNaoVistas = false) => {
+export const useMinhasReservasConvidadas = (apenasNaoNotificadas = false, apenasNaoVistas = false, skip = 0, limit = 100) => {
   const { isAuthenticated } = useAuthStore();
   const { data, loading, error, refetch } = useQuery(GET_MINHAS_RESERVAS_CONVIDADAS, {
     skip: !isAuthenticated, // Só executa quando autenticado
-    variables: { apenasNaoNotificadas, apenasNaoVistas },
+    variables: { apenasNaoNotificadas, apenasNaoVistas, skip, limit },
     errorPolicy: 'all',
     fetchPolicy: 'cache-and-network', // Busca da rede mesmo se tiver cache
     pollInterval: 30000, // Atualiza a cada 30 segundos

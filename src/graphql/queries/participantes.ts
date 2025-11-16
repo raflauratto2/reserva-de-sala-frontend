@@ -1,8 +1,8 @@
 import { gql } from '@apollo/client';
 
 export const GET_USUARIOS_NAO_ADMIN = gql`
-  query GetUsuariosNaoAdmin {
-    usuariosNaoAdmin {
+  query GetUsuariosNaoAdmin($skip: Int, $limit: Int) {
+    usuariosNaoAdmin(skip: $skip, limit: $limit) {
       id
       nome
       username
@@ -30,8 +30,8 @@ export const GET_PARTICIPANTES_RESERVA = gql`
 `;
 
 export const GET_MINHAS_RESERVAS_CONVIDADAS = gql`
-  query GetMinhasReservasConvidadas($apenasNaoNotificadas: Boolean, $apenasNaoVistas: Boolean) {
-    minhasReservasConvidadas(apenasNaoNotificadas: $apenasNaoNotificadas, apenasNaoVistas: $apenasNaoVistas) {
+  query GetMinhasReservasConvidadas($apenasNaoNotificadas: Boolean, $apenasNaoVistas: Boolean, $skip: Int, $limit: Int) {
+    minhasReservasConvidadas(apenasNaoNotificadas: $apenasNaoNotificadas, apenasNaoVistas: $apenasNaoVistas, skip: $skip, limit: $limit) {
       id
       reservaId
       usuarioId

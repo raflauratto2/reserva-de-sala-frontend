@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { useUsuarios } from '@/controllers/useUsuarios';
-import { useAuth } from '@/controllers/useAuth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,21 +16,28 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/components/ui/toast';
-import { CreateUsuarioInput } from '@/models/User';
+import { EditUsuarioModal } from '@/components/EditUsuarioModal';
+import { DeleteUsuarioModal } from '@/components/DeleteUsuarioModal';
+import { User } from '@/models/User';
 
 export const UsuariosList = () => {
   const { showToast, ToastContainer } = useToast();
-  const { usuarios, loading, error, refetch } = useUsuarios();
-  const { handleCreateUser } = useAuth();
+  const { usuarios, loading, error, refetch, criarUsuarioAdmin, atualizarUsuarioAdmin, deletarUsuario } = useUsuarios();
   
-  // Estado do formulário
+  // Estado do formulário de criação
   const [showForm, setShowForm] = useState(false);
   const [nome, setNome] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [admin, setAdmin] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Estado dos modais de edição e exclusão
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [selectedUsuario, setSelectedUsuario] = useState<User | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,8 +59,13 @@ export const UsuariosList = () => {
     }
 
     try {
-      const input: CreateUsuarioInput = { nome, username, email, password };
-      const result = await handleCreateUser(input);
+      const result = await criarUsuarioAdmin({
+        nome,
+        username,
+        email,
+        password,
+        admin,
+      });
       
       if (result.success) {
         // Limpar formulário
@@ -61,10 +74,10 @@ export const UsuariosList = () => {
         setEmail('');
         setPassword('');
         setConfirmPassword('');
+        setAdmin(false);
         setShowForm(false);
         
         showToast({ message: 'Usuário criado com sucesso!', variant: 'success' });
-        await refetch();
       } else {
         setFormError(result.error || 'Erro ao criar usuário');
         showToast({ message: result.error || 'Erro ao criar usuário', variant: 'destructive' });
@@ -73,6 +86,47 @@ export const UsuariosList = () => {
       const errorMsg = err.message || 'Erro ao criar usuário. Verifique os dados informados.';
       setFormError(errorMsg);
       showToast({ message: errorMsg, variant: 'destructive' });
+    }
+  };
+
+  const handleEdit = (usuario: User) => {
+    setSelectedUsuario(usuario);
+    setEditModalOpen(true);
+  };
+
+  const handleDelete = (usuario: User) => {
+    setSelectedUsuario(usuario);
+    setDeleteModalOpen(true);
+  };
+
+  const handleSaveEdit = async (usuarioId: number, data: {
+    nome?: string;
+    email?: string;
+    password?: string;
+    admin?: boolean;
+  }) => {
+    const result = await atualizarUsuarioAdmin(usuarioId, data);
+    
+    if (result.success) {
+      showToast({ message: 'Usuário atualizado com sucesso!', variant: 'success' });
+      return { success: true };
+    } else {
+      showToast({ message: result.error || 'Erro ao atualizar usuário', variant: 'destructive' });
+      return { success: false, error: result.error };
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedUsuario) return;
+
+    const result = await deletarUsuario(selectedUsuario.id);
+    
+    if (result.success) {
+      showToast({ message: 'Usuário excluído com sucesso!', variant: 'success' });
+      setDeleteModalOpen(false);
+      setSelectedUsuario(null);
+    } else {
+      showToast({ message: result.error || 'Erro ao excluir usuário', variant: 'destructive' });
     }
   };
 
@@ -187,6 +241,21 @@ export const UsuariosList = () => {
                         />
                       </FormControl>
                     </FormItem>
+
+                    <FormItem className="md:col-span-2">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="admin-create"
+                          checked={admin}
+                          onChange={(e) => setAdmin(e.target.checked)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        <FormLabel htmlFor="admin-create" className="cursor-pointer">
+                          Administrador
+                        </FormLabel>
+                      </div>
+                    </FormItem>
                   </div>
 
                   <div className="flex gap-2 mt-4">
@@ -204,6 +273,7 @@ export const UsuariosList = () => {
                         setEmail('');
                         setPassword('');
                         setConfirmPassword('');
+                        setAdmin(false);
                       }}
                     >
                       Cancelar
@@ -228,6 +298,7 @@ export const UsuariosList = () => {
                   <TableHead>Email</TableHead>
                   <TableHead>Admin</TableHead>
                   <TableHead>Criado em</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -248,8 +319,26 @@ export const UsuariosList = () => {
                     </TableCell>
                     <TableCell>
                       {usuario.createdAt
-                        ? new Date(usuario.createdAt).toLocaleDateString('pt-BR')
+                        ? format(new Date(usuario.createdAt), "dd/MM/yyyy HH:mm", { locale: ptBR })
                         : '-'}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEdit(usuario)}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(usuario)}
+                        >
+                          Excluir
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -258,6 +347,21 @@ export const UsuariosList = () => {
           )}
         </CardContent>
       </Card>
+      
+      <EditUsuarioModal
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+        usuario={selectedUsuario}
+        onSave={handleSaveEdit}
+      />
+      
+      <DeleteUsuarioModal
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        usuario={selectedUsuario}
+        onConfirm={handleConfirmDelete}
+      />
+      
       <ToastContainer />
     </div>
   );

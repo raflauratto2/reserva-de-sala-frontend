@@ -65,8 +65,8 @@ export const GET_HORARIOS_DISPONIVEIS_POR_HORA = gql`
 `;
 
 export const GET_RESERVAS_POR_SALA = gql`
-  query GetReservasPorSala($salaId: Int!, $data: String!) {
-    reservasPorSala(salaId: $salaId, data: $data) {
+  query GetReservasPorSala($salaId: Int!, $data: String!, $skip: Int, $limit: Int) {
+    reservasPorSala(salaId: $salaId, data: $data, skip: $skip, limit: $limit) {
       id
       local
       sala
