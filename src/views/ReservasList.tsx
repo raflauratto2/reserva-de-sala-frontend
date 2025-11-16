@@ -20,13 +20,20 @@ import { useDeleteReserva } from '@/controllers/useReservas';
 import { useToast } from '@/components/ui/toast';
 import { Sala } from '@/models/Sala';
 import { useAuthStore } from '@/store/auth-store';
+import { Pagination } from '@/components/Pagination';
 
 export const ReservasList = () => {
   const { showToast, ToastContainer } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthStore();
-  const { reservas, loading, error, refetch } = useReservas();
+  
+  // Paginação (frontend - sobre dados filtrados)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  
+  // Carrega mais dados do backend para permitir filtros no frontend
+  const { reservas, loading, error, refetch } = useReservas(0, 1000);
   const { salas, loading: loadingSalas } = useSalas(0, 100, false); // Carrega todas as salas
   const { handleDelete } = useDeleteReserva();
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -37,6 +44,11 @@ export const ReservasList = () => {
   const [filtroData, setFiltroData] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState('');
   const [filtroLocal, setFiltroLocal] = useState('');
+  
+  // Reset página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtroSala, filtroData, filtroResponsavel, filtroLocal]);
 
   // Recarrega a lista quando voltar para esta rota (após criar/editar reserva)
   useEffect(() => {
@@ -106,6 +118,13 @@ export const ReservasList = () => {
       return true;
     });
   }, [reservas, filtroSala, filtroData, filtroResponsavel, filtroLocal, salasMap]);
+  
+  // Calcula paginação dos dados filtrados
+  const totalItems = reservasFiltradas.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const reservasPaginadas = reservasFiltradas.slice(startIndex, endIndex);
 
   const handleEdit = (id: string) => {
     navigate(`/reservas/${id}/editar`);
@@ -242,7 +261,7 @@ export const ReservasList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {reservasFiltradas.map((reserva: any) => {
+                {reservasPaginadas.map((reserva: any) => {
                   const salaInfo = getSalaInfo(reserva);
                   return (
                     <TableRow key={reserva.id}>
@@ -295,6 +314,20 @@ export const ReservasList = () => {
                 })}
               </TableBody>
             </Table>
+          )}
+          
+          {reservasFiltradas.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onItemsPerPageChange={(newItemsPerPage) => {
+                setItemsPerPage(newItemsPerPage);
+                setCurrentPage(1);
+              }}
+            />
           )}
         </CardContent>
       </Card>

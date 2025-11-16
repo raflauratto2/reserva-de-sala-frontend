@@ -19,10 +19,24 @@ import { useToast } from '@/components/ui/toast';
 import { EditUsuarioModal } from '@/components/EditUsuarioModal';
 import { DeleteUsuarioModal } from '@/components/DeleteUsuarioModal';
 import { User } from '@/models/User';
+import { Pagination } from '@/components/Pagination';
 
 export const UsuariosList = () => {
   const { showToast, ToastContainer } = useToast();
-  const { usuarios, loading, error, refetch, criarUsuarioAdmin, atualizarUsuarioAdmin, deletarUsuario } = useUsuarios();
+  
+  // Paginação (frontend)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  
+  // Carrega mais dados do backend
+  const { usuarios: todosUsuarios, loading, error, refetch, criarUsuarioAdmin, atualizarUsuarioAdmin, deletarUsuario } = useUsuarios(0, 1000);
+  
+  // Calcula paginação
+  const totalItems = todosUsuarios.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const usuarios = todosUsuarios.slice(startIndex, endIndex);
   
   // Estado do formulário de criação
   const [showForm, setShowForm] = useState(false);
@@ -76,6 +90,7 @@ export const UsuariosList = () => {
         setConfirmPassword('');
         setAdmin(false);
         setShowForm(false);
+        setCurrentPage(1); // Reset para primeira página
         
         showToast({ message: 'Usuário criado com sucesso!', variant: 'success' });
       } else {
@@ -284,11 +299,12 @@ export const UsuariosList = () => {
             </Card>
           )}
 
-          {usuarios.length === 0 ? (
+          {todosUsuarios.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               Nenhum usuário encontrado.
             </div>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -344,6 +360,21 @@ export const UsuariosList = () => {
                 ))}
               </TableBody>
             </Table>
+            
+            {todosUsuarios.length > 0 && (
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                itemsPerPage={itemsPerPage}
+                totalItems={totalItems}
+                onItemsPerPageChange={(newItemsPerPage) => {
+                  setItemsPerPage(newItemsPerPage);
+                  setCurrentPage(1);
+                }}
+              />
+            )}
+            </>
           )}
         </CardContent>
       </Card>

@@ -28,10 +28,17 @@ import {
 } from '@/components/ui/dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/toast';
+import { Pagination } from '@/components/Pagination';
 
 export const SalasList = () => {
   const { showToast, ToastContainer } = useToast();
-  const { salas, loading, error, refetch } = useSalas(0, 100, false);
+  
+  // Paginação (frontend - sobre dados filtrados)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  
+  // Carrega mais dados do backend para permitir filtros no frontend
+  const { salas, loading, error, refetch } = useSalas(0, 1000, false);
   const { reservas, loading: loadingReservas } = useReservas(0, 100);
   const { handleCreate } = useCreateSala();
   const { handleUpdate } = useUpdateSala();
@@ -63,6 +70,11 @@ export const SalasList = () => {
   const [filtroNome, setFiltroNome] = useState('');
   const [filtroLocal, setFiltroLocal] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'todas' | 'ativa' | 'inativa'>('todas');
+  
+  // Reset página quando filtros mudarem
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtroNome, filtroLocal, filtroStatus]);
 
   // Agrupa reservas por salaId
   const reservasPorSala = useMemo(() => {
@@ -99,6 +111,13 @@ export const SalasList = () => {
       return true;
     });
   }, [salas, filtroNome, filtroLocal, filtroStatus]);
+  
+  // Calcula paginação dos dados filtrados
+  const totalItems = salasFiltradas.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const salasPaginadas = salasFiltradas.slice(startIndex, endIndex);
 
   // Função para obter todas as reservas de uma sala (para o modal)
   const getTodasReservas = (salaId: number) => {
@@ -270,7 +289,7 @@ export const SalasList = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {salasFiltradas.map((sala: Sala) => {
+                {salasPaginadas.map((sala: Sala) => {
                   const totalReservas = reservasPorSala.get(sala.id)?.length || 0;
                   
                   return (
@@ -333,6 +352,20 @@ export const SalasList = () => {
                 })}
               </TableBody>
             </Table>
+          )}
+          
+          {salasFiltradas.length > 0 && (
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              itemsPerPage={itemsPerPage}
+              totalItems={totalItems}
+              onItemsPerPageChange={(newItemsPerPage) => {
+                setItemsPerPage(newItemsPerPage);
+                setCurrentPage(1);
+              }}
+            />
           )}
         </CardContent>
       </Card>
