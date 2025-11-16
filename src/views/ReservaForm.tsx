@@ -46,7 +46,7 @@ export const ReservaForm = () => {
     salaSelecionada,
     data,
     '08:00:00',
-    '17:00:00'
+    '18:00:00'
   );
 
   // Carrega dados da reserva ao editar

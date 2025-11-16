@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useReservas } from '@/controllers/useReservas';
 import { useSalas } from '@/controllers/useSalas';
+import { useMeuHistorico } from '@/controllers/useParticipantes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { format, startOfToday, addDays, isAfter, isBefore, parseISO } from 'date-fns';
@@ -11,6 +12,7 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const { reservas, loading: loadingReservas } = useReservas(0, 1000);
   const { salas, loading: loadingSalas } = useSalas(0, 1000, false);
+  const { historico, loading: loadingHistorico } = useMeuHistorico(true, false, 0, 100); // Apenas futuras
 
   // Estatísticas de Salas
   const statsSalas = useMemo(() => {
@@ -84,7 +86,36 @@ export const Dashboard = () => {
       .slice(0, 5);
   }, [reservas, salas]);
 
-  if (loadingReservas || loadingSalas) {
+  // Próximas reuniões do usuário (ordenadas por data, limitadas a 5)
+  const proximasReunioes = useMemo(() => {
+    const agora = new Date();
+    
+    return historico
+      .filter((item) => {
+        const dataInicio = parseISO(item.reserva.dataHoraInicio);
+        return isAfter(dataInicio, agora);
+      })
+      .sort((a, b) => {
+        const dataA = parseISO(a.reserva.dataHoraInicio);
+        const dataB = parseISO(b.reserva.dataHoraInicio);
+        return dataA.getTime() - dataB.getTime();
+      })
+      .slice(0, 5);
+  }, [historico]);
+
+  // Função auxiliar para obter nome da sala
+  const getNomeSala = (reserva: any) => {
+    if (reserva.salaRel?.nome) {
+      return reserva.salaRel.nome;
+    }
+    if (reserva.salaId) {
+      const sala = salas.find((s: any) => s.id === reserva.salaId);
+      return sala?.nome || `Sala ${reserva.salaId}`;
+    }
+    return reserva.sala || 'N/A';
+  };
+
+  if (loadingReservas || loadingSalas || loadingHistorico) {
     return (
       <div className="container mx-auto p-3 sm:p-4 md:p-6">
         <div className="text-center text-sm sm:text-base">Carregando dashboard...</div>
@@ -159,6 +190,159 @@ export const Dashboard = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Próximas Reuniões do Usuário */}
+      <Card className="mb-4 md:mb-6">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Minhas Próximas Reuniões</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/historico')}
+            className="text-xs sm:text-sm"
+          >
+            Ver Histórico Completo
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {proximasReunioes.length === 0 ? (
+            <div className="text-center text-muted-foreground py-8 text-sm sm:text-base">
+              Você não tem reuniões agendadas
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {/* Versão Mobile - Cards */}
+              <div className="block md:hidden space-y-3">
+                {proximasReunioes.map((item) => {
+                  const reserva = item.reserva;
+                  const dataInicio = parseISO(reserva.dataHoraInicio);
+                  const dataFim = parseISO(reserva.dataHoraFim);
+                  
+                  return (
+                    <Card key={reserva.id} className="border-l-4 border-l-blue-500">
+                      <CardContent className="p-4 space-y-2">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-base mb-1">
+                              {getNomeSala(reserva)}
+                            </h3>
+                            <div className="text-sm text-muted-foreground">
+                              <div className="font-medium">
+                                {format(dataInicio, "dd/MM/yyyy", { locale: ptBR })}
+                              </div>
+                              <div>
+                                {format(dataInicio, "HH:mm", { locale: ptBR })} - {format(dataFim, "HH:mm", { locale: ptBR })}
+                              </div>
+                            </div>
+                          </div>
+                          <span
+                            className={`px-2 py-1 rounded text-xs whitespace-nowrap ${
+                              item.souResponsavel
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {item.souResponsavel ? 'Responsável' : 'Participante'}
+                          </span>
+                        </div>
+                        
+                        <div className="text-sm space-y-1">
+                          <div>
+                            <span className="font-medium">Responsável: </span>
+                            <span className="text-muted-foreground">
+                              {reserva.responsavel?.nome || reserva.responsavel?.username || 'N/A'}
+                            </span>
+                          </div>
+                          {reserva.linkMeet && (
+                            <div>
+                              <a
+                                href={reserva.linkMeet}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:underline break-all text-xs"
+                              >
+                                Link Meet
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+              
+              {/* Versão Desktop - Lista */}
+              <div className="hidden md:block space-y-2">
+                {proximasReunioes.map((item) => {
+                  const reserva = item.reserva;
+                  const dataInicio = parseISO(reserva.dataHoraInicio);
+                  const dataFim = parseISO(reserva.dataHoraFim);
+                  
+                  return (
+                    <div
+                      key={reserva.id}
+                      className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                      <div className="flex-1 grid grid-cols-4 gap-4 items-center">
+                        <div>
+                          <div className="font-medium">{getNomeSala(reserva)}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {reserva.salaRel?.local || reserva.local || '-'}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium">
+                            {format(dataInicio, "dd/MM/yyyy", { locale: ptBR })}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {format(dataInicio, "HH:mm", { locale: ptBR })} - {format(dataFim, "HH:mm", { locale: ptBR })}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm">
+                            {reserva.responsavel?.nome || reserva.responsavel?.username || 'N/A'}
+                          </div>
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-xs mt-1 ${
+                              item.souResponsavel
+                                ? 'bg-blue-100 text-blue-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}
+                          >
+                            {item.souResponsavel ? 'Responsável' : 'Participante'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {reserva.linkMeet && (
+                            <a
+                              href={reserva.linkMeet}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:underline text-sm"
+                            >
+                              Link Meet
+                            </a>
+                          )}
+                          {item.souResponsavel && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => navigate(`/reservas/${reserva.id}/editar`)}
+                            >
+                              Editar
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-6">
         {/* Gráfico: Salas (Ativas vs Inativas) */}
