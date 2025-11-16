@@ -41,32 +41,86 @@ export const Dashboard = () => {
     return { total, hoje: hojeCount, semana: semanaCount };
   }, [reservas]);
 
-  // Próximos dias livres (dias sem reservas)
+  // Próximos dias livres (dias com pelo menos um horário disponível em alguma sala)
   const proximosDiasLivres = useMemo(() => {
     const hoje = startOfToday();
     const diasLivres: { data: Date; diaSemana: string; disponivel: boolean }[] = [];
+    
+    // Horários disponíveis: 08:00 a 17:00 (10 horários de 1 hora cada)
+    const todosHorarios = Array.from({ length: 10 }, (_, i) => {
+      const hora = 8 + i;
+      return `${String(hora).padStart(2, '0')}:00`;
+    });
+    
+    // Salas ativas
+    const salasAtivas = salas.filter((s: any) => s.ativa);
     
     // Verifica os próximos 14 dias
     for (let i = 1; i <= 14; i++) {
       const data = addDays(hoje, i);
       const dataStr = format(data, 'yyyy-MM-dd');
       
-      // Verifica se há reservas neste dia
-      const temReservas = reservas.some((r: any) => {
+      // Se não há salas ativas, não há dias disponíveis
+      if (salasAtivas.length === 0) {
+        continue;
+      }
+      
+      // Busca todas as reservas neste dia
+      const reservasDoDia = reservas.filter((r: any) => {
         const dataReserva = format(parseISO(r.dataHoraInicio), 'yyyy-MM-dd');
         return dataReserva === dataStr;
       });
       
+      // Se não há reservas, o dia está completamente livre
+      if (reservasDoDia.length === 0) {
+        diasLivres.push({
+          data,
+          diaSemana: format(data, 'EEEE', { locale: ptBR }),
+          disponivel: true,
+        });
+        continue;
+      }
+      
+      // Verifica se há pelo menos uma sala com horário disponível
+      let temSalaComHorarioDisponivel = false;
+      
+      for (const sala of salasAtivas) {
+        // Busca reservas desta sala neste dia
+        const reservasDaSala = reservasDoDia.filter((r: any) => r.salaId === sala.id);
+        
+        // Se não há reservas nesta sala, ela está completamente livre
+        if (reservasDaSala.length === 0) {
+          temSalaComHorarioDisponivel = true;
+          break;
+        }
+        
+        // Verifica quais horários estão ocupados nesta sala
+        const horariosOcupados = new Set<string>();
+        reservasDaSala.forEach((reserva: any) => {
+          const dataInicio = parseISO(reserva.dataHoraInicio);
+          const horaInicio = format(dataInicio, 'HH:mm');
+          horariosOcupados.add(horaInicio);
+        });
+        
+        // Verifica se há pelo menos um horário disponível nesta sala
+        const temHorarioDisponivel = todosHorarios.some(hora => !horariosOcupados.has(hora));
+        
+        if (temHorarioDisponivel) {
+          temSalaComHorarioDisponivel = true;
+          break;
+        }
+      }
+      
       diasLivres.push({
         data,
         diaSemana: format(data, 'EEEE', { locale: ptBR }),
-        disponivel: !temReservas,
+        disponivel: temSalaComHorarioDisponivel,
       });
     }
     
-    // Retorna apenas os próximos 5 dias livres
+    // Retorna apenas os próximos 5 dias com horários disponíveis
     return diasLivres.filter(d => d.disponivel).slice(0, 5);
-  }, [reservas]);
+  }, [reservas, salas]);
 
   // Reservas por sala (top 5)
   const reservasPorSala = useMemo(() => {
